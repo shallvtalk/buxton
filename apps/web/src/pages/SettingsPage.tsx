@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { checkPasswordStrength, GITHUB_URL, LANGUAGES, LIMIT_CEILINGS, type Limits, type MemoryHistorySettings, type Settings, TALORYS_VERSION } from "@talorys/shared";
+import { checkPasswordStrength, LANGUAGES, LIMIT_CEILINGS, type Limits, type MemoryHistorySettings, type Settings, TALORYS_VERSION } from "@talorys/shared";
 import { Download, ExternalLink, LogOut, Monitor, Moon, Sun, Upload } from "lucide-react";
 import { Badge, Button, Card, ConfirmDialog, ErrorNotice, Input, Label, PageHeader, Select, Spinner, Switch } from "../components/ui";
 import { SemanticRecallCard } from "../components/SemanticRecallCard";
@@ -547,8 +547,9 @@ function AboutTab({ settings }: { settings: Settings }) {
   const save = useSaveSettings();
   const latest = update.data?.update_available ? update.data.latest : null;
   return (
-    <Section title="About Talorys">
-      <Row label="Version" hint={latest ? `Version ${latest} is available. Run the update command below.` : undefined}>
+    <Section title="About Buxton">
+      <p className="text-sm leading-6 text-fg-muted">Buxton workspace, powered by Talorys. The original agent, storage and deployment architecture are preserved.</p>
+      <Row label="Version" hint={latest ? `Upstream Talorys ${latest} is available. Review it in the Buxton fork before updating.` : undefined}>
         <div className="flex items-center justify-end gap-2">
           {latest && <Badge tone="accent">New</Badge>}
           <p className="font-mono text-sm">{info.data?.deployed_version ?? TALORYS_VERSION}</p>
@@ -573,12 +574,12 @@ function AboutTab({ settings }: { settings: Settings }) {
         </div>
       </Row>
       <Row label="Source code" hint="Free and open source under the MIT license.">
-        <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="flex items-center justify-end gap-1 text-sm text-accent hover:underline">
+        <a href="https://github.com/shallvtalk/buxton" target="_blank" rel="noopener noreferrer" className="flex items-center justify-end gap-1 text-sm text-accent hover:underline">
           GitHub <ExternalLink className="h-3.5 w-3.5" />
         </a>
       </Row>
-      <Row label="Update" hint="Run in your Talorys directory. Your data is preserved.">
-        <code className="block rounded bg-muted px-2 py-1 text-right text-xs">npx create-talorys@latest update</code>
+      <Row label="Update" hint="Build this fork, then run its local installer against your installation directory. The npm upstream update replaces the Buxton frontend.">
+        <a href="https://github.com/shallvtalk/buxton/blob/main/apps/web/README.md" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline">Buxton update guide ↗</a>
       </Row>
     </Section>
   );

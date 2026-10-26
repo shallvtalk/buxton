@@ -6,6 +6,7 @@ import {
   type TextareaHTMLAttributes,
   forwardRef,
   useEffect,
+  useId,
   useRef,
 } from "react";
 import { Loader2, X } from "lucide-react";
@@ -124,7 +125,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
   return (
     <div className="flex flex-wrap items-end justify-between gap-4 pb-6">
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">{title}</h1>
+        <h1 className="page-heading text-fg">{title}</h1>
         {description && <p className="mt-1 text-sm text-fg-muted">{description}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -164,6 +165,7 @@ export function Dialog({
   wide?: boolean;
 }) {
   const { t } = useI18n();
+  const titleId = useId();
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -174,6 +176,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
+      aria-labelledby={titleId}
       // Only user-initiated closes; the effect's own el.close() (open → false) must not re-trigger onClose.
       onClose={() => {
         if (open) onClose();
@@ -193,7 +196,7 @@ export function Dialog({
       {open && (
         <div className="animate-slide-up">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <h2 className="text-base font-semibold">{title}</h2>
+            <h2 id={titleId} className="text-base font-semibold">{title}</h2>
             <button type="button" onClick={onClose} className="rounded-md p-1 text-fg-subtle hover:bg-muted hover:text-fg" aria-label={t("common.close")}>
               <X className="h-4 w-4" />
             </button>

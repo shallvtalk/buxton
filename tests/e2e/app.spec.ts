@@ -12,7 +12,7 @@ async function login(page: Page) {
 test.describe("Talorys owner experience", () => {
   test("login rejects a wrong password and has no signup", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Talorys", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Welcome back.", exact: true })).toBeVisible();
     await expect(page.getByText(/sign ?up|register|create account/i)).toHaveCount(0);
     await page.getByPlaceholder("Owner password").fill("definitely-wrong-1");
     await page.getByRole("button", { name: "Unlock" }).click();
@@ -66,7 +66,7 @@ test.describe("Talorys owner experience", () => {
     await card.getByRole("button", { name: "Approve" }).click();
     await expect(page.getByText(/Delete task “e2e approve-me” · Approved and done/)).toBeVisible();
     await page.getByRole("link", { name: "Tasks" }).first().click();
-    await expect(page.getByText("e2e approve-me")).toHaveCount(0);
+    await expect(page.getByRole("main").getByText("e2e approve-me")).toHaveCount(0);
   });
 
   test("a proposed note rewrite shows the exact new text before approval", async ({ page }) => {
@@ -111,7 +111,7 @@ test.describe("Talorys owner experience", () => {
     await login(page);
     await page.getByRole("link", { name: "Tasks" }).first().click();
     await page.getByLabel("New task title").fill("e2e water the plants");
-    await page.getByRole("button", { name: "Add task" }).click();
+    await page.getByRole("button", { name: "Add task", exact: true }).click();
     await expect(page.getByText("e2e water the plants")).toBeVisible();
     await page.getByRole("button", { name: "Complete “e2e water the plants”" }).click();
     await page.getByRole("tab", { name: /completed/i }).click();

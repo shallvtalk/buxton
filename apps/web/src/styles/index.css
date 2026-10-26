@@ -3,7 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Talorys design tokens. Neutral foundation with a calm teal brand accent.
+ * Buxton design tokens. Warm paper, ink, and a restrained clay accent.
  * Semantic colors are CSS variables so light/dark modes swap in one place.
  */
 @theme {
@@ -52,40 +52,42 @@
 }
 
 :root {
-  --bg: oklch(0.99 0.002 240);
-  --surface: oklch(1 0 0);
-  --subtle: oklch(0.975 0.003 240);
-  --muted: oklch(0.955 0.004 240);
-  --fg: oklch(0.21 0.01 250);
-  --fg-muted: oklch(0.45 0.012 250);
-  --fg-subtle: oklch(0.6 0.01 250);
-  --border: oklch(0.92 0.004 250);
-  --border-strong: oklch(0.86 0.006 250);
-  --accent: var(--color-brand-700);
-  --accent-fg: oklch(0.99 0.01 185);
-  --accent-soft: var(--color-brand-50);
-  --danger: oklch(0.55 0.19 25);
-  --danger-soft: oklch(0.97 0.02 25);
-  --warning: oklch(0.7 0.14 70);
-  --success: oklch(0.58 0.13 155);
+  --bg: #fbfaf7;
+  --surface: #fffefa;
+  --subtle: #f2f0eb;
+  --muted: #eeece6;
+  --fg: #282923;
+  --fg-muted: #686960;
+  --fg-subtle: #7e7f74;
+  --border: #e6e3da;
+  --border-strong: #cec9bd;
+  --accent: #9a482e;
+  --accent-fg: #fffaf5;
+  --accent-soft: #f3e8df;
+  --danger: #b63838;
+  --danger-soft: #fff0ed;
+  --warning: #94610d;
+  --success: #487052;
   color-scheme: light;
 }
 
 .dark {
-  --bg: oklch(0.17 0.006 250);
-  --surface: oklch(0.205 0.007 250);
-  --subtle: oklch(0.225 0.008 250);
-  --muted: oklch(0.26 0.009 250);
-  --fg: oklch(0.95 0.004 250);
-  --fg-muted: oklch(0.75 0.008 250);
-  --fg-subtle: oklch(0.6 0.01 250);
-  --border: oklch(0.29 0.009 250);
-  --border-strong: oklch(0.36 0.01 250);
-  --accent: var(--color-brand-400);
-  --accent-fg: oklch(0.18 0.03 185);
-  --accent-soft: oklch(0.27 0.04 185);
-  --danger: oklch(0.68 0.17 25);
-  --danger-soft: oklch(0.28 0.05 25);
+  --bg: #1e201e;
+  --surface: #252824;
+  --subtle: #191c19;
+  --muted: #30342e;
+  --fg: #eeeee5;
+  --fg-muted: #b5b8ab;
+  --fg-subtle: #929787;
+  --border: #383d34;
+  --border-strong: #535b49;
+  --accent: #e5ac8e;
+  --accent-fg: #2e2018;
+  --accent-soft: #3d3026;
+  --danger: #f3958e;
+  --danger-soft: #432b29;
+  --warning: #e2bc70;
+  --success: #a4c4a4;
   color-scheme: dark;
 }
 
@@ -204,4 +206,71 @@ select:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component animations */
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Buxton: a quiet, editorial workspace. All assets and fonts stay same-origin. */
+.brand-wordmark, .welcome-title, .login-title, .page-heading {
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+}
+.buxton-shell { height: 100dvh; }
+.workspace-sidebar { background-image: linear-gradient(180deg, color-mix(in srgb, var(--surface) 30%, transparent), transparent); }
+.workspace-nav.is-active { box-shadow: inset 2px 0 var(--accent); }
+.new-conversation { min-height: 38px; font-size: 12px; }
+.conversation-list input { background: transparent; border-color: transparent; font-size: 12px; }
+.conversation-list input:focus { background: var(--surface); border-color: var(--border-strong); }
+.conversation-list nav > p { font-size: 12px; text-align: left; line-height: 1.7; }
+.conversation-list nav li > button:first-child span:first-child { font-size: 12px; }
+.conversation-list nav li > button:first-child span:last-child { margin-top: 3px; font-size: 10px; }
+.chat-header { background: color-mix(in srgb, var(--bg) 94%, transparent); border-bottom: 1px solid var(--border); }
+.chat-header h2 { font-size: 12px; color: var(--fg-muted); }
+.welcome-title { font-size: clamp(36px, 3.5vw, 53px); line-height: 1.13; }
+.welcome-title > span { color: var(--accent); }
+.suggestion-card { min-height: 100px; box-shadow: 0 2px 3px rgb(40 41 35 / 0.015); }
+.suggestion-card:hover { transform: translateY(-1px); }
+.suggestion-icon { border: 1px solid var(--border); }
+.composer-box { box-shadow: 0 6px 24px rgb(40 41 35 / 0.045); }
+.composer-box textarea { min-height: 60px; }
+.composer-box button[aria-label="Send message"] { border-radius: 50%; }
+.composer-meta { border-top: 1px solid var(--border); margin-top: 3px; }
+.user-message > div { background: var(--muted); padding: 14px 18px; border-radius: 18px 18px 4px 18px; }
+.assistant-message > svg { margin-top: 4px; }
+.tool-activity { border-left: 2px solid var(--border-strong); padding: 4px 0 4px 12px; }
+.tool-activity > span { border-radius: 6px; background: var(--surface); }
+.page-heading { font-size: 34px; line-height: 1.2; }
+.workspace-main > div:not(.chat-workspace) { padding-top: 40px; }
+.login-page { min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+.login-story { background: var(--subtle); border-right: 1px solid var(--border); padding: clamp(32px, 6vw, 88px); display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+.login-story::after { content: ""; position: absolute; width: 350px; height: 350px; border: 1px solid var(--border-strong); border-radius: 50%; right: -140px; bottom: 12%; pointer-events: none; opacity: .45; }
+.login-story h2 { font-family: "Iowan Old Style", Palatino, Georgia, serif; font-size: clamp(38px, 4.5vw, 68px); line-height: 1.08; letter-spacing: -.045em; font-weight: 400; max-width: 540px; }
+.login-story h2 em { color: var(--accent); font-style: normal; }
+.login-story-footer { display: flex; gap: 24px; font-size: 11px; color: var(--fg-muted); }
+.login-form-panel { padding: 32px; display: flex; align-items: center; justify-content: center; }
+.login-title { font-size: 36px; }
+.skip-link { position: fixed; top: -100px; left: 16px; z-index: 100; padding: 12px 20px; border-radius: 8px; background: var(--fg); color: var(--bg); }
+.skip-link:focus { top: 16px; }
+@media (max-width: 767px) {
+  .login-page { grid-template-columns: 1fr; }
+  .login-story { display: none; }
+  .login-form-panel { min-height: 100dvh; padding: 24px; }
+  .welcome { justify-content: flex-start; padding-top: 36px; }
+  .welcome-title { font-size: 37px; }
+  .suggestion-card { min-height: 84px; }
+  .workspace-main > div:not(.chat-workspace) { padding-top: 26px; }
+  .chat-header { height: 48px; }
+  .composer-box textarea { min-height: 40px; }
+  .chat-composer { padding-top: 8px; }
+}
+@media (max-height: 650px) and (min-width: 768px) {
+  .workspace-sidebar > a { padding-top: 18px; padding-bottom: 16px; }
+  .workspace-sidebar > button { margin-bottom: 12px; }
+  .workspace-sidebar > .mt-7 { margin-top: 16px; }
+  .welcome { justify-content: flex-start; padding-top: 30px; }
+}
+@media (max-height: 650px) and (min-width: 768px) {
+  .workspace-sidebar { overflow-y: auto; }
+  .workspace-sidebar > * { flex-shrink: 0; }
+  .workspace-sidebar > .mt-7 { flex: 1 0 180px; }
+  .sidebar-account { min-height: 90px; }
 }
