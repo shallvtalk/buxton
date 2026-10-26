@@ -1,3 +1,4 @@
+import { useUiText } from "../lib/i18n/ui-text";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Lock, ArrowUpRight } from "lucide-react";
@@ -7,6 +8,7 @@ import { api, ApiError } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 
 export function LoginPage({ configured }: { configured: boolean }) {
+  const tr = useUiText();
   const { t, rich } = useI18n();
   const qc = useQueryClient();
   const [password, setPassword] = useState("");
@@ -50,35 +52,36 @@ export function LoginPage({ configured }: { configured: boolean }) {
 
   return (
     <div className="login-page bg-bg">
-      <aside className="login-story" aria-label="About Buxton">
+      <aside className="login-story" aria-label={tr("About Buxton")}>
         <div className="flex items-center gap-3">
           <Logo className="h-10 w-10" />
-          <span className="brand-wordmark text-3xl">Buxton.</span>
+          <span className="brand-wordmark text-3xl">{tr("Buxton.")}</span>
         </div>
         <div className="relative z-10 py-12">
-          <p className="mb-6 text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-muted">Your personal workspace</p>
+          <p className="mb-6 text-[10px] font-semibold uppercase tracking-[0.22em] text-fg-muted">{tr("Your personal workspace")}</p>
           <h2>
-            A clearer mind.
-            <br />A little more
+            {tr("A clearer mind.")}
             <br />
-            <em>room to think.</em>
+            {tr("A little more")}
+            <br />
+            <em>{tr("room to think.")}</em>
           </h2>
           <p className="mt-7 max-w-xs text-sm leading-7 text-fg-muted">
-            Gather your thoughts, remember the useful things, and make space for what comes next.
+            {tr("Gather your thoughts, remember the useful things, and make space for what comes next.")}
           </p>
         </div>
         <div className="login-story-footer">
-          <span>Thoughts, connected.</span>
-          <span>Plans, in motion.</span>
+          <span>{tr("Thoughts, connected.")}</span>
+          <span>{tr("Plans, in motion.")}</span>
         </div>
       </aside>
       <div className="login-form-panel">
         <div className="w-full max-w-[360px] animate-slide-up">
           <div className="mb-9">
             <Logo className="mb-8 h-10 w-10 md:hidden" />
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">Buxton / Personal</p>
-            <h1 className="login-title">Welcome back.</h1>
-            <p className="mt-1.5 text-sm text-fg-muted">Your thoughts and plans, right where you left them.</p>
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">{tr("Buxton / Personal")}</p>
+            <h1 className="login-title">{tr("Welcome back.")}</h1>
+            <p className="mt-1.5 text-sm text-fg-muted">{tr("Your thoughts and plans, right where you left them.")}</p>
           </div>
 
           {!configured ? (

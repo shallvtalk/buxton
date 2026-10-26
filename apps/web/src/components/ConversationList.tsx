@@ -1,3 +1,4 @@
+import { useUiText } from "../lib/i18n/ui-text";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import type { Conversation } from "@talorys/shared";
@@ -9,6 +10,7 @@ import { cn, relativeTime } from "../lib/utils";
 import { useI18n } from "../lib/i18n";
 
 export function ConversationList({ activeId, onNavigate }: { activeId?: string; onNavigate: () => void }) {
+  const tr = useUiText();
   const i18n = useI18n();
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -47,20 +49,21 @@ export function ConversationList({ activeId, onNavigate }: { activeId?: string; 
             onNavigate();
           }}
         >
-          <Plus className="h-4 w-4" /> New conversation
+          <Plus className="h-4 w-4" />
+          {tr("New conversation")}
         </Button>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search history"
+            placeholder={tr("Search history")}
             className="h-9 pl-9 text-sm"
-            aria-label="Search conversations"
+            aria-label={tr("Search conversations")}
           />
         </div>
       </div>
-      <nav className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-2 pb-3" aria-label="Conversations">
+      <nav className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-2 pb-3" aria-label={tr("Conversations")}>
         {list.isLoading ? (
           <div className="flex justify-center py-6">
             <Spinner />
@@ -68,7 +71,7 @@ export function ConversationList({ activeId, onNavigate }: { activeId?: string; 
         ) : list.isError ? (
           <ErrorNotice error={list.error} onRetry={() => void list.refetch()} />
         ) : !list.data?.length ? (
-          <p className="px-3 py-6 text-center text-sm text-fg-subtle">{debounced ? "No matches." : "No conversations yet."}</p>
+          <p className="px-3 py-6 text-center text-sm text-fg-subtle">{tr(debounced ? "No matches." : "No conversations yet.")}</p>
         ) : (
           <ul className="space-y-0.5">
             {list.data.map((c) => (
@@ -109,7 +112,8 @@ export function ConversationList({ activeId, onNavigate }: { activeId?: string; 
                         setMenu(null);
                       }}
                     >
-                      <Pencil className="h-3.5 w-3.5" /> Rename
+                      <Pencil className="h-3.5 w-3.5" />
+                      {tr("Rename")}
                     </button>
                     <button
                       type="button"
@@ -119,7 +123,8 @@ export function ConversationList({ activeId, onNavigate }: { activeId?: string; 
                         setMenu(null);
                       }}
                     >
-                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {tr("Delete")}
                     </button>
                   </div>
                 )}
@@ -132,17 +137,17 @@ export function ConversationList({ activeId, onNavigate }: { activeId?: string; 
       <Dialog
         open={!!renaming}
         onClose={() => setRenaming(null)}
-        title="Rename conversation"
+        title={tr("Rename conversation")}
         footer={
           <>
             <Button variant="ghost" onClick={() => setRenaming(null)}>
-              Cancel
+              {tr("Cancel")}
             </Button>
             <Button
               onClick={() => renaming && title.trim() && rename.mutate({ id: renaming.id, title: title.trim() })}
               loading={rename.isPending}
             >
-              Save
+              {tr("Save")}
             </Button>
           </>
         }
@@ -153,12 +158,12 @@ export function ConversationList({ activeId, onNavigate }: { activeId?: string; 
             if (renaming && title.trim()) rename.mutate({ id: renaming.id, title: title.trim() });
           }}
         >
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} autoFocus aria-label="Title" />
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} autoFocus aria-label={tr("Title")} />
         </form>
       </Dialog>
       <ConfirmDialog
         open={!!deleting}
-        title="Delete conversation?"
+        title={tr("Delete conversation?")}
         message={`“${deleting?.title}” and all its messages will be permanently deleted.`}
         onCancel={() => setDeleting(null)}
         onConfirm={() => deleting && remove.mutate(deleting.id)}

@@ -2,7 +2,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect } fro
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, onUnauthorized } from "../lib/api";
 import { applyTheme } from "../lib/theme";
-import { applyLanguage, type LanguagePreference } from "../lib/i18n";
+import { applyAccountLanguage, type LanguagePreference } from "../lib/i18n";
 
 interface SessionState {
   authenticated: boolean;
@@ -36,7 +36,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [query.data?.theme]);
 
   useEffect(() => {
-    if (query.data?.language) applyLanguage(query.data.language);
+    if (query.data?.language) applyAccountLanguage(query.data.language);
   }, [query.data?.language]);
 
   useEffect(

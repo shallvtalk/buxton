@@ -1,12 +1,13 @@
 import { Fragment, type ReactNode, useSyncExternalStore } from "react";
-import type { Language } from "@talorys/shared";
+import { type Language, resolveBrowserLanguage } from "./languages";
+export { UI_LANGUAGES } from "./languages";
 import { format, isLanguage, type MessageKey, type MessageParams, translate } from "./core";
 
 export type { MessageKey } from "./core";
 export type LanguagePreference = "system" | Language;
 
 /** Each language's name in that language, as shown in the language picker. */
-export const LANGUAGE_NAMES: Record<Language, string> = { en: "English", ko: "한국어" };
+export const LANGUAGE_NAMES: Record<Language, string> = { en: "English", ko: "한국어", "zh-CN": "简体中文" };
 
 export interface I18n {
   /** What the owner picked in Settings. */
@@ -24,11 +25,7 @@ const KEY = "talorys.language";
 
 /** The first browser language we have messages for, else English. */
 export function browserLanguage(): Language {
-  for (const tag of navigator.languages?.length ? navigator.languages : [navigator.language]) {
-    const base = tag?.toLowerCase().split("-")[0];
-    if (isLanguage(base)) return base;
-  }
-  return "en";
+  return resolveBrowserLanguage(navigator.languages?.length ? navigator.languages : [navigator.language]);
 }
 
 function create(preference: LanguagePreference): I18n {
@@ -84,6 +81,30 @@ function snapshot(): I18n {
 }
 
 /** The active language, its message lookup and its formatting locale. Re-renders when the language changes. */
+const serverI18n = create("en");
 export function useI18n(): I18n {
-  return useSyncExternalStore(subscribe, snapshot);
+  return useSyncExternalStore(subscribe, snapshot, () => serverI18n);
+}
+
+/** Chinese is a device preference so the unchanged upstream backend never receives an unsupported locale. */
+const DEVICE_KEY = "buxton.language.device";
+export function applyDeviceLanguage(preference: LanguagePreference): void {
+  try {
+    if (preference === "zh-CN") localStorage.setItem(DEVICE_KEY, preference);
+    else localStorage.removeItem(DEVICE_KEY);
+  } catch {
+    /* In-memory switching still works when storage is disabled. */
+  }
+  applyLanguage(preference);
+}
+export function applyAccountLanguage(preference: LanguagePreference): void {
+  try {
+    if (localStorage.getItem(DEVICE_KEY) === "zh-CN") {
+      applyLanguage("zh-CN");
+      return;
+    }
+  } catch {
+    /* Fall back to the account preference. */
+  }
+  applyLanguage(preference);
 }

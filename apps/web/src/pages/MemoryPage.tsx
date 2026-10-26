@@ -1,7 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { MEMORY_CATEGORIES, type Memory, type MemoryCategory, type MemoryReview, type MemoryReviewAction } from "@talorys/shared";
 import { Archive, ArchiveRestore, Brain, Clock, GitCompare, Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
-import { Badge, Button, ConfirmDialog, Dialog, EmptyState, ErrorNotice, Input, Label, PageHeader, Select, Spinner, Textarea } from "../components/ui";
+import {
+  Badge,
+  Button,
+  ConfirmDialog,
+  Dialog,
+  EmptyState,
+  ErrorNotice,
+  Input,
+  Label,
+  PageHeader,
+  Select,
+  Spinner,
+  Textarea,
+} from "../components/ui";
 import { type MemoryStatusFilter, useApiMutation, useMemories, useMemoryHistory, useMemoryReviews } from "../hooks/queries";
 import { useToast } from "../hooks/toast";
 import { api } from "../lib/api";
@@ -40,7 +53,13 @@ function writeMessage(t: I18n["t"], r: WriteResponse): string {
 }
 
 const sourceLabel = (t: I18n["t"], m: Memory) =>
-  m.source === "agent" ? t("memory.sourceAgent") : m.source === "import" ? t("memory.sourceImport") : m.source === "remote" ? t("memory.sourceRemote") : t("memory.sourceManual");
+  m.source === "agent"
+    ? t("memory.sourceAgent")
+    : m.source === "import"
+      ? t("memory.sourceImport")
+      : m.source === "remote"
+        ? t("memory.sourceRemote")
+        : t("memory.sourceManual");
 
 export default function MemoryPage() {
   const i18n = useI18n();
@@ -103,7 +122,14 @@ export default function MemoryPage() {
       />
       <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg bg-muted p-1" role="tablist" aria-label={t("memory.statusTabs")}>
         {FILTERS.map((f) => {
-          const count = f.value === "active" ? counts?.active : f.value === "historical" ? counts?.historical : f.value === "review" ? counts?.review : undefined;
+          const count =
+            f.value === "active"
+              ? counts?.active
+              : f.value === "historical"
+                ? counts?.historical
+                : f.value === "review"
+                  ? counts?.review
+                  : undefined;
           return (
             <button
               type="button"
@@ -124,7 +150,13 @@ export default function MemoryPage() {
       </div>
       <div className="relative mb-6">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("memory.search")} className="pl-9" aria-label={t("memory.search")} />
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={t("memory.search")}
+          className="pl-9"
+          aria-label={t("memory.search")}
+        />
       </div>
 
       {(filter === "review" || filter === "all") && reviewList.length > 0 && <ReviewPanel reviews={reviewList} />}
@@ -140,7 +172,14 @@ export default function MemoryPage() {
           <EmptyState
             icon={<Brain className="h-9 w-9" />}
             title={debounced ? t("memory.emptyNoMatch") : filter === "all" ? t("memory.emptyNothingYet") : t("memory.emptyNothingHere")}
-            action={!debounced && filter === "all" && <Button variant="outline" onClick={() => setEditing("new")}>{t("memory.addFirst")}</Button>}
+            action={
+              !debounced &&
+              filter === "all" && (
+                <Button variant="outline" onClick={() => setEditing("new")}>
+                  {t("memory.addFirst")}
+                </Button>
+              )
+            }
           >
             {debounced
               ? t("memory.emptyTryDifferent")
@@ -167,7 +206,11 @@ export default function MemoryPage() {
                       <p className={cn("text-[15px] leading-6", m.status === "historical" && "text-fg-muted")}>
                         {m.content}
                         {m.status === "historical" && <Badge className="ml-2 align-middle">{t("memory.past")}</Badge>}
-                        {m.status === "uncertain" && <Badge tone="warning" className="ml-2 align-middle">{t("memory.unsure")}</Badge>}
+                        {m.status === "uncertain" && (
+                          <Badge tone="warning" className="ml-2 align-middle">
+                            {t("memory.unsure")}
+                          </Badge>
+                        )}
                       </p>
                       <p className="mt-0.5 text-xs text-fg-subtle">
                         {sourceLabel(t, m)} · {relativeTime(m.updated_at, i18n)}
@@ -184,27 +227,63 @@ export default function MemoryPage() {
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100">
-                      <Button variant="ghost" size="icon" onClick={() => setHistoryOf(m)} aria-label={t("memory.history")} title={t("memory.historyShort")}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setHistoryOf(m)}
+                        aria-label={t("memory.history")}
+                        title={t("memory.historyShort")}
+                      >
                         <Clock className="h-4 w-4" />
                       </Button>
                       {m.status !== "historical" && (
-                        <Button variant="ghost" size="icon" onClick={() => setCorrecting(m)} aria-label={t("memory.updateFact")} title={t("memory.updateFactHint")}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setCorrecting(m)}
+                          aria-label={t("memory.updateFact")}
+                          title={t("memory.updateFactHint")}
+                        >
                           <RefreshCw className="h-4 w-4" />
                         </Button>
                       )}
                       {m.status === "historical" ? (
-                        <Button variant="ghost" size="icon" onClick={() => setStatus.mutate({ id: m.id, status: "active" })} aria-label={t("memory.restore")} title={t("memory.restore")}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setStatus.mutate({ id: m.id, status: "active" })}
+                          aria-label={t("memory.restore")}
+                          title={t("memory.restore")}
+                        >
                           <ArchiveRestore className="h-4 w-4" />
                         </Button>
                       ) : (
-                        <Button variant="ghost" size="icon" onClick={() => setStatus.mutate({ id: m.id, status: "historical" })} aria-label={t("memory.markPast")} title={t("memory.markPastHint")}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setStatus.mutate({ id: m.id, status: "historical" })}
+                          aria-label={t("memory.markPast")}
+                          title={t("memory.markPastHint")}
+                        >
                           <Archive className="h-4 w-4" />
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" onClick={() => setEditing(m)} aria-label={t("memory.edit")} title={t("memory.editShort")}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditing(m)}
+                        aria-label={t("memory.edit")}
+                        title={t("memory.editShort")}
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleting(m)} aria-label={t("memory.delete")} title={t("common.delete")}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleting(m)}
+                        aria-label={t("memory.delete")}
+                        title={t("common.delete")}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -291,7 +370,9 @@ function HistoryDialog({ memory, onClose }: { memory: Memory | null; onClose: ()
       ) : (
         <div className="space-y-4 text-sm">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-fg-subtle">{current.status === "historical" ? t("memory.latest") : t("memory.current")}</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-fg-subtle">
+              {current.status === "historical" ? t("memory.latest") : t("memory.current")}
+            </p>
             <p className="mt-1 leading-6">“{current.content}”</p>
             <p className="text-xs text-fg-subtle">
               {t("memory.savedAt", { when: relativeTime(current.created_at, i18n) })}
@@ -345,7 +426,11 @@ function CorrectDialog({ memory, onClose }: { memory: Memory | null; onClose: ()
           <Button variant="ghost" onClick={onClose}>
             {t("common.cancel")}
           </Button>
-          <Button onClick={() => save.mutate(undefined)} loading={save.isPending} disabled={!content.trim() || content.trim() === memory?.content}>
+          <Button
+            onClick={() => save.mutate(undefined)}
+            loading={save.isPending}
+            disabled={!content.trim() || content.trim() === memory?.content}
+          >
             {t("memory.saveNewVersion")}
           </Button>
         </>
@@ -408,7 +493,15 @@ function MemoryEditor({ memory, onClose }: { memory: Memory | "new" | null; onCl
       <div className="space-y-4">
         <div>
           <Label htmlFor="memory-content">{t("memory.whatToRemember")}</Label>
-          <Textarea id="memory-content" rows={3} value={content} onChange={(e) => setContent(e.target.value)} maxLength={2000} autoFocus placeholder={t("memory.contentPlaceholder")} />
+          <Textarea
+            id="memory-content"
+            rows={3}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            maxLength={2000}
+            autoFocus
+            placeholder={t("memory.contentPlaceholder")}
+          />
           {memory !== "new" && memory && <p className="mt-1 text-xs text-fg-subtle">{t("memory.editHint")}</p>}
         </div>
         <div>

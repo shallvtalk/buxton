@@ -1,3 +1,4 @@
+import { useUiText } from "../lib/i18n/ui-text";
 import { type ReactNode, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, Trash2 } from "lucide-react";
@@ -23,7 +24,14 @@ interface SemanticStatus {
   pending: number;
   embeddings_today: number;
   cap: number;
-  items?: { vectors: number; pending: number; by_type: { task: number; note: number; automation: number }; items_today: number; items_cap: number; indexing: boolean };
+  items?: {
+    vectors: number;
+    pending: number;
+    by_type: { task: number; note: number; automation: number };
+    items_today: number;
+    items_cap: number;
+    indexing: boolean;
+  };
 }
 
 interface ReindexReport {
@@ -36,14 +44,19 @@ interface ReindexReport {
 
 const DEFAULT_CAP = 500;
 const DEFAULT_ITEM_CAP = 50;
-const EMBEDDERS: Record<SemanticStatus["embedder"], string> = { "workers-ai": "Workers AI", mock: "Mock (local dev)", none: "Not available" };
+const EMBEDDERS: Record<SemanticStatus["embedder"], string> = {
+  "workers-ai": "Workers AI",
+  mock: "Mock (local dev)",
+  none: "Not available",
+};
 
 function Row({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
+  const tr = useUiText();
   return (
     <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="text-sm font-medium">{label}</p>
-        {hint && <p className="mt-0.5 text-xs leading-5 text-fg-subtle">{hint}</p>}
+        <p className="text-sm font-medium">{typeof label === "string" ? tr(label) : label}</p>
+        {hint && <p className="mt-0.5 text-xs leading-5 text-fg-subtle">{typeof hint === "string" ? tr(hint) : hint}</p>}
       </div>
       <div className="shrink-0 sm:w-64">{children}</div>
     </div>
@@ -55,6 +68,7 @@ function Row({ label, hint, children }: { label: string; hint?: ReactNode; child
  * index status (polled while memories are pending or an item pass runs) and the reindex and delete actions.
  */
 export function SemanticRecallCard() {
+  const tr = useUiText();
   const qc = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -80,10 +94,13 @@ export function SemanticRecallCard() {
   const [model, setModel] = useState(savedModel);
   useEffect(() => setModel(savedModel), [savedModel]);
 
-  const saveConfig = useApiMutation((patch: Partial<SemanticConfig>) => api<{ config: SemanticConfig }>("/semantic/config", { method: "PUT", body: patch }), {
-    success: (r) => (r.config.enabled ? "Semantic recall settings saved" : "Semantic recall turned off"),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["semantic"] }),
-  });
+  const saveConfig = useApiMutation(
+    (patch: Partial<SemanticConfig>) => api<{ config: SemanticConfig }>("/semantic/config", { method: "PUT", body: patch }),
+    {
+      success: (r) => (r.config.enabled ? "Semantic recall settings saved" : "Semantic recall turned off"),
+      onSuccess: () => void qc.invalidateQueries({ queryKey: ["semantic"] }),
+    },
+  );
   const reindex = useApiMutation(() => api<ReindexReport>("/semantic/reindex", { method: "POST" }), {
     invalidate: [["semantic"]],
     success: (r) => `Reindexed: ${r.embedded} embedded, ${r.pending} pending`,
@@ -118,15 +135,18 @@ export function SemanticRecallCard() {
 
   return (
     <section className="space-y-2">
-      <h2 className="px-1 text-xs font-medium uppercase tracking-wider text-fg-subtle">Semantic memory recall</h2>
+      <h2 className="px-1 text-xs font-medium uppercase tracking-wider text-fg-subtle">{tr("Semantic memory recall")}</h2>
       <Card>
         <div className="divide-y divide-border">
-          <Row label="Semantic memory recall" hint={`Finds memories, tasks, notes and reminders by meaning using Workers AI embeddings. Memories use up to ${savedCap} embeddings per day; tasks, notes and reminders have their own ${itemCap} per day. Off by default.`}>
+          <Row
+            label={tr("Semantic memory recall")}
+            hint={`Finds memories, tasks, notes and reminders by meaning using Workers AI embeddings. Memories use up to ${savedCap} embeddings per day; tasks, notes and reminders have their own ${itemCap} per day. Off by default.`}
+          >
             <div className="flex justify-end">
               <Switch
                 checked={enabled}
                 onChange={(v) => saveConfig.mutate({ enabled: v })}
-                label="Semantic memory recall"
+                label={tr("Semantic memory recall")}
                 disabled={config.isLoading || saveConfig.isPending}
               />
             </div>
@@ -143,7 +163,7 @@ export function SemanticRecallCard() {
                   <ErrorNotice error={status.error} onRetry={() => void status.refetch()} />
                 </div>
               ) : (
-                <div role="group" aria-label="Semantic recall status" className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
+                <div role="group" aria-label={tr("Semantic recall status")} className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
                   {stats.map(([label, value]) => (
                     <div key={label} className="bg-surface px-5 py-4">
                       <p className="text-xs text-fg-subtle">{label}</p>
@@ -156,21 +176,24 @@ export function SemanticRecallCard() {
               )}
               {s && !status.error && (
                 <div className="flex items-center justify-between gap-3 px-5 py-4 text-sm">
-                  <p className="text-xs text-fg-subtle">Tasks, notes, reminders</p>
+                  <p className="text-xs text-fg-subtle">{tr("Tasks, notes, reminders")}</p>
                   <p className="font-medium tabular-nums">
-                    {itemsIndexed} indexed, <span data-stat="Items pending">{itemsPending}</span> pending
+                    {itemsIndexed}
+                    {tr(" indexed, ")}
+                    <span data-stat="Items pending">{itemsPending}</span>
+                    {tr("pending")}
                   </p>
                 </div>
               )}
               {s?.items && !status.error && (
                 <div className="flex items-center justify-between gap-3 px-5 py-4 text-sm">
-                  <p className="text-xs text-fg-subtle">Item embeddings today</p>
+                  <p className="text-xs text-fg-subtle">{tr("Item embeddings today")}</p>
                   <p className="font-medium tabular-nums" data-stat="Item embeddings today">
                     {s.items.items_today} / {itemCap}
                   </p>
                 </div>
               )}
-              <Row label="Embedding model" hint="Default: @cf/baai/bge-m3. Must be a Workers AI text embedding model.">
+              <Row label={tr("Embedding model")} hint={tr("Default: @cf/baai/bge-m3. Must be a Workers AI text embedding model.")}>
                 <form
                   className="flex gap-2"
                   onSubmit={(e) => {
@@ -178,13 +201,21 @@ export function SemanticRecallCard() {
                     if (model.trim() !== savedModel) saveConfig.mutate({ model: model.trim() });
                   }}
                 >
-                  <Input value={model} onChange={(e) => setModel(e.target.value)} aria-label="Embedding model id" className="font-mono text-xs" />
+                  <Input
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    aria-label={tr("Embedding model id")}
+                    className="font-mono text-xs"
+                  />
                   <Button type="submit" variant="outline" disabled={!model.trim() || model.trim() === savedModel}>
-                    Save
+                    {tr("Save")}
                   </Button>
                 </form>
               </Row>
-              <Row label="Max embeddings per day" hint="Separate from the AI request cap. Recall falls back to keywords when spent.">
+              <Row
+                label={tr("Max embeddings per day")}
+                hint={tr("Separate from the AI request cap. Recall falls back to keywords when spent.")}
+              >
                 <form
                   className="flex gap-2"
                   onSubmit={(e) => {
@@ -192,13 +223,27 @@ export function SemanticRecallCard() {
                     submitCap();
                   }}
                 >
-                  <Input type="number" min={0} max={10_000} step={1} value={cap} onChange={(e) => setCap(Number(e.target.value))} onBlur={submitCap} aria-label="Max embeddings per day" />
+                  <Input
+                    type="number"
+                    min={0}
+                    max={10_000}
+                    step={1}
+                    value={cap}
+                    onChange={(e) => setCap(Number(e.target.value))}
+                    onBlur={submitCap}
+                    aria-label={tr("Max embeddings per day")}
+                  />
                   <Button type="submit" variant="outline" disabled={!validCap || cap === savedCap} loading={saveConfig.isPending}>
-                    Save
+                    {tr("Save")}
                   </Button>
                 </form>
               </Row>
-              <Row label="Max item embeddings per day" hint="For tasks, notes and reminders, counted apart from memories. Items saved after it is spent are found by keyword until the next day.">
+              <Row
+                label={tr("Max item embeddings per day")}
+                hint={tr(
+                  "For tasks, notes and reminders, counted apart from memories. Items saved after it is spent are found by keyword until the next day.",
+                )}
+              >
                 <form
                   className="flex gap-2"
                   onSubmit={(e) => {
@@ -214,24 +259,45 @@ export function SemanticRecallCard() {
                     value={itemCapInput}
                     onChange={(e) => setItemCapInput(Number(e.target.value))}
                     onBlur={submitItemCap}
-                    aria-label="Max item embeddings per day"
+                    aria-label={tr("Max item embeddings per day")}
                   />
-                  <Button type="submit" variant="outline" disabled={!validItemCap || itemCapInput === savedItemCap} loading={saveConfig.isPending}>
-                    Save
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    disabled={!validItemCap || itemCapInput === savedItemCap}
+                    loading={saveConfig.isPending}
+                  >
+                    {tr("Save")}
                   </Button>
                 </form>
               </Row>
-              <Row label="Reindex" hint="Re-embeds every memory. Uses the daily embedding budget.">
-                <Button variant="outline" className="w-full justify-center" loading={reindex.isPending} disabled={busy} onClick={() => reindex.mutate(undefined)}>
-                  <RefreshCw className="h-4 w-4" /> Reindex
+              <Row label={tr("Reindex")} hint={tr("Re-embeds every memory. Uses the daily embedding budget.")}>
+                <Button
+                  variant="outline"
+                  className="w-full justify-center"
+                  loading={reindex.isPending}
+                  disabled={busy}
+                  onClick={() => reindex.mutate(undefined)}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  {tr("Reindex")}
                 </Button>
               </Row>
             </>
           )}
           {config.data?.ever_enabled && (
-            <Row label="Delete semantic data" hint="Removes the search index and turns the feature off. Your memories are kept.">
-              <Button variant="outline" className="w-full justify-center text-danger" disabled={busy} onClick={() => setConfirmDelete(true)}>
-                <Trash2 className="h-4 w-4" /> Delete semantic data
+            <Row
+              label={tr("Delete semantic data")}
+              hint={tr("Removes the search index and turns the feature off. Your memories are kept.")}
+            >
+              <Button
+                variant="outline"
+                className="w-full justify-center text-danger"
+                disabled={busy}
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                {tr("Delete semantic data")}
               </Button>
             </Row>
           )}
@@ -239,9 +305,9 @@ export function SemanticRecallCard() {
       </Card>
       <ConfirmDialog
         open={confirmDelete}
-        title="Delete semantic data?"
-        message="Removes the search index and turns the feature off. Your memories are kept."
-        confirmLabel="Delete"
+        title={tr("Delete semantic data?")}
+        message={tr("Removes the search index and turns the feature off. Your memories are kept.")}
+        confirmLabel={tr("Delete")}
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => wipe.mutate(undefined)}
         loading={wipe.isPending}

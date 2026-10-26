@@ -1,3 +1,4 @@
+import { useUiText } from "../lib/i18n/ui-text";
 import type {
   Automation,
   AutomationRun,
@@ -200,12 +201,13 @@ export function useApiMutation<TVars, TResult = unknown>(
 ) {
   const qc = useQueryClient();
   const toast = useToast();
+  const tr = useUiText();
   const { t } = useI18n();
   return useMutation({
     mutationFn: fn,
     onSuccess: async (result, vars) => {
       await Promise.all((opts.invalidate ?? []).map((key) => qc.invalidateQueries({ queryKey: key as unknown[] })));
-      if (opts.success) toast(typeof opts.success === "function" ? opts.success(result) : opts.success);
+      if (opts.success) toast(tr(typeof opts.success === "function" ? opts.success(result) : opts.success));
       opts.onSuccess?.(result, vars);
     },
     onError: (error) => toast(errorMessage(error, t("common.somethingWentWrong")), "error"),

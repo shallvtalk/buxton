@@ -1,3 +1,4 @@
+import { useUiText } from "../lib/i18n/ui-text";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import {
@@ -34,6 +35,7 @@ const NAV: readonly { to: string; label: NavKey; mobileLabel?: NavKey; icon: Luc
 ];
 
 export function AppShell() {
+  const tr = useUiText();
   const { t } = useI18n();
   const { logout } = useSession();
   const settings = useSettings();
@@ -77,30 +79,32 @@ export function AppShell() {
   return (
     <div className="buxton-shell flex h-full">
       <a href="#workspace" className="skip-link">
-        Skip to workspace
+        {tr("Skip to workspace")}
       </a>
       <aside className="workspace-sidebar hidden w-[264px] shrink-0 flex-col border-r border-border bg-subtle md:flex">
-        <NavLink to="/chat" aria-label="Buxton home" className="flex items-center gap-3 px-6 pb-7 pt-8">
+        <NavLink to="/chat" aria-label={tr("Buxton home")} className="flex items-center gap-3 px-6 pb-7 pt-8">
           <Logo className="h-9 w-9" />
           <div>
             <span className="brand-wordmark block text-[22px] leading-6">
-              Buxton<span className="text-accent">.</span>
+              {tr("Buxton")}
+              <span className="text-accent">.</span>
             </span>
-            <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] text-fg-muted">Personal workspace</span>
+            <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] text-fg-muted">{tr("Personal workspace")}</span>
           </div>
         </NavLink>
         <button
           type="button"
           onClick={() => setSearchOpen(true)}
           className="mx-4 mb-6 flex items-center gap-2 rounded-lg border border-border bg-surface/60 px-3 py-2.5 text-xs text-fg-muted hover:border-border-strong"
-          aria-label="Search workspace"
+          aria-label={tr("Search workspace")}
         >
-          <Search className="h-3.5 w-3.5" /> Find your way{" "}
+          <Search className="h-3.5 w-3.5" />
+          {tr(" Find your way")}{" "}
           <kbd className="ml-auto flex items-center gap-0.5 text-[10px]">
             <Command className="h-3 w-3" /> K
           </kbd>
         </button>
-        <div className="px-6 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-subtle">Workspace</div>
+        <div className="px-6 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-subtle">{tr("Workspace")}</div>
         <nav className="space-y-1 px-3" aria-label={t("nav.main")}>
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -119,7 +123,7 @@ export function AppShell() {
           ))}
         </nav>
         <div className="mt-7 flex min-h-0 flex-1 flex-col">
-          <div className="px-6 pb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-subtle">Conversations</div>
+          <div className="px-6 pb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-subtle">{tr("Conversations")}</div>
           <ConversationList activeId={conversationId} onNavigate={() => {}} />
         </div>
         <div className="sidebar-account mx-3 mb-3 mt-2 rounded-xl border border-border bg-surface/70 p-2">
@@ -129,7 +133,7 @@ export function AppShell() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold">{agentName}</p>
-              <p className="mt-0.5 text-[10px] text-fg-muted">Your personal agent</p>
+              <p className="mt-0.5 text-[10px] text-fg-muted">{tr("Your personal agent")}</p>
             </div>
             {bell}
           </div>
@@ -151,16 +155,16 @@ export function AppShell() {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-bg px-4 md:hidden">
-          <NavLink to="/chat" className="flex items-center gap-2" aria-label="Buxton home">
+          <NavLink to="/chat" className="flex items-center gap-2" aria-label={tr("Buxton home")}>
             <Logo className="h-7 w-7" />
-            <span className="brand-wordmark text-xl">Buxton.</span>
+            <span className="brand-wordmark text-xl">{tr("Buxton.")}</span>
           </NavLink>
           <div className="flex items-center">
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
               className="rounded-lg p-2 text-fg-muted"
-              aria-label="Search workspace"
+              aria-label={tr("Search workspace")}
             >
               <Search className="h-[18px] w-[18px]" />
             </button>
@@ -205,6 +209,7 @@ export function AppShell() {
 }
 
 function WorkspaceSearch({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const tr = useUiText();
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
@@ -221,12 +226,12 @@ function WorkspaceSearch({ open, onClose }: { open: boolean; onClose: () => void
     if (open) setQuery("");
   }, [open]);
   return (
-    <Dialog open={open} onClose={onClose} title="Find your way">
+    <Dialog open={open} onClose={onClose} title={tr("Find your way")}>
       <Input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Pages and conversations…"
-        aria-label="Search pages and conversations"
+        placeholder={tr("Pages and conversations…")}
+        aria-label={tr("Search pages and conversations")}
         autoFocus
       />
       <div className="mt-3 space-y-1">
@@ -243,14 +248,14 @@ function WorkspaceSearch({ open, onClose }: { open: boolean; onClose: () => void
             <Icon className="h-4 w-4 shrink-0 text-accent" />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm">{title}</span>
-              <span className="text-[10px] text-fg-muted">{type}</span>
+              <span className="text-[10px] text-fg-muted">{tr(type)}</span>
             </span>
             <ArrowUpRight className="h-3.5 w-3.5 text-fg-subtle" />
           </button>
         ))}
         {!items.length && (
           <p role="status" className="px-3 py-6 text-sm text-fg-muted">
-            No matching pages or conversations.
+            {tr("No matching pages or conversations.")}
           </p>
         )}
       </div>

@@ -1,3 +1,4 @@
+import { useUiText } from "../lib/i18n/ui-text";
 import type { UsageCounters, UsageReport } from "@talorys/shared";
 import { useI18n } from "../lib/i18n";
 
@@ -6,9 +7,11 @@ function formatEstimate(value: number | null, locale: string, currency = false):
   if (value === null) return "—";
   if (currency) {
     if (value > 0 && value < 0.0001) return "<$0.0001";
-    return `$${value >= 0.01
-      ? value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      : value.toLocaleString(locale, { maximumSignificantDigits: 2 })}`;
+    return `$${
+      value >= 0.01
+        ? value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : value.toLocaleString(locale, { maximumSignificantDigits: 2 })
+    }`;
   }
   if (value > 0 && value < 0.01) return "<0.01";
   return value >= 100
@@ -25,26 +28,38 @@ function formatTokens(reported: number, estimated: number, legacy: number, local
 }
 
 export function UsageBreakdown({ counters, compact = false }: { counters: UsageCounters; compact?: boolean }) {
+  const tr = useUiText();
   const { locale } = useI18n();
   const legacy = counters.input_tokens_legacy + counters.output_tokens_legacy;
   const partial = counters.unpriced_calls > 0 || legacy > 0;
   const cost: [string, string] = [`Est. cost${partial ? " · partial" : ""}`, formatEstimate(counters.cost_usd_estimate, locale, true)];
-  const rows: [string, string][] = compact ? [
-    ["Tokens", formatTokens(
-      counters.input_tokens_reported + counters.output_tokens_reported,
-      counters.input_tokens_estimated + counters.output_tokens_estimated,
-      legacy,
-      locale,
-    )],
-    cost,
-    ["Embeddings", counters.embedding_requests.toLocaleString(locale)],
-  ] : [
-    ["Input tokens", formatTokens(counters.input_tokens_reported, counters.input_tokens_estimated, counters.input_tokens_legacy, locale)],
-    ["Output tokens", formatTokens(counters.output_tokens_reported, counters.output_tokens_estimated, counters.output_tokens_legacy, locale)],
-    [`Est. Neurons${partial ? " · partial" : ""}`, formatEstimate(counters.neurons_estimate, locale)],
-    cost,
-    ["Embedding requests", counters.embedding_requests.toLocaleString(locale)],
-  ];
+  const rows: [string, string][] = compact
+    ? [
+        [
+          "Tokens",
+          formatTokens(
+            counters.input_tokens_reported + counters.output_tokens_reported,
+            counters.input_tokens_estimated + counters.output_tokens_estimated,
+            legacy,
+            locale,
+          ),
+        ],
+        cost,
+        ["Embeddings", counters.embedding_requests.toLocaleString(locale)],
+      ]
+    : [
+        [
+          "Input tokens",
+          formatTokens(counters.input_tokens_reported, counters.input_tokens_estimated, counters.input_tokens_legacy, locale),
+        ],
+        [
+          "Output tokens",
+          formatTokens(counters.output_tokens_reported, counters.output_tokens_estimated, counters.output_tokens_legacy, locale),
+        ],
+        [`Est. Neurons${partial ? " · partial" : ""}`, formatEstimate(counters.neurons_estimate, locale)],
+        cost,
+        ["Embedding requests", counters.embedding_requests.toLocaleString(locale)],
+      ];
   if (counters.mock_calls > 0) rows.push(["Mock calls", counters.mock_calls.toLocaleString(locale)]);
 
   const coverage = [counters.priced_calls === 0 ? "No priced calls yet" : `${counters.priced_calls.toLocaleString(locale)} priced calls`];
@@ -52,20 +67,35 @@ export function UsageBreakdown({ counters, compact = false }: { counters: UsageC
   if (legacy > 0) coverage.push("legacy tokens unpriced");
   if (counters.mock_calls > 0) coverage.push("mock calls free");
 
-  return <div>
-    <dl className="space-y-2 text-xs text-fg-muted">
-      {rows.map(([label, value]) => <div key={label} className="flex justify-between gap-3">
-        <dt>{label}</dt><dd className="shrink-0 tabular-nums text-fg">{value}</dd>
-      </div>)}
-    </dl>
-    {/* The compact popover links to Settings, which carries this note. */}
-    {!compact && <p className="mt-3 text-xs leading-5 text-fg-subtle">{coverage.join(" · ")}</p>}
-  </div>;
+  return (
+    <div>
+      <dl className="space-y-2 text-xs text-fg-muted">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-3">
+            <dt>{tr(label)}</dt>
+            <dd className="shrink-0 tabular-nums text-fg">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {/* The compact popover links to Settings, which carries this note. */}
+      {!compact && <p className="mt-3 text-xs leading-5 text-fg-subtle">{coverage.join(" · ")}</p>}
+    </div>
+  );
 }
 
 export function UsagePricingNote({ data }: { data: UsageReport }) {
+  const tr = useUiText();
   const { locale } = useI18n();
-  return <p className="text-xs leading-5 text-fg-subtle">
-    {data.note} Rates from <a href={data.pricing.source_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Workers AI pricing</a> as of {data.pricing.as_of}: ${data.pricing.usd_per_1000_neurons.toLocaleString(locale, { maximumFractionDigits: 8 })} per 1,000 Neurons.
-  </p>;
+  return (
+    <p className="text-xs leading-5 text-fg-subtle">
+      {data.note}
+      {tr(" Rates from ")}
+      <a href={data.pricing.source_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+        {tr("Workers AI pricing")}
+      </a>
+      {tr(" as of ")}
+      {data.pricing.as_of}: ${data.pricing.usd_per_1000_neurons.toLocaleString(locale, { maximumFractionDigits: 8 })}
+      {tr("per 1,000 Neurons.")}
+    </p>
+  );
 }

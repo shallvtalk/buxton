@@ -1,3 +1,4 @@
+import { useUiText } from "../lib/i18n/ui-text";
 import { type KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -51,6 +52,7 @@ const SUGGESTIONS = [
 ];
 
 export function ChatPage() {
+  const tr = useUiText();
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -216,7 +218,7 @@ export function ChatPage() {
               <Spinner />
             </div>
           ) : conversation.isError && !streamHere ? (
-            <div className="p-8 text-center text-sm text-fg-muted">This conversation could not be loaded.</div>
+            <div className="p-8 text-center text-sm text-fg-muted">{tr("This conversation could not be loaded.")}</div>
           ) : (
             <div className="message-thread mx-auto w-full max-w-3xl space-y-9 px-4 py-8 md:px-8">
               {messages.map((m) =>
@@ -251,7 +253,7 @@ export function ChatPage() {
         <Composer streaming={streaming || remoteStreaming} onSend={(t) => void send(t)} onStop={stop} autoFocus={showEmpty} />
       </section>
 
-      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} title="Conversations">
+      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} title={tr("Conversations")}>
         <div className="-mx-5 -my-4 h-[60vh]">
           <ConversationList activeId={conversationId} onNavigate={() => setHistoryOpen(false)} />
         </div>
@@ -261,6 +263,7 @@ export function ChatPage() {
 }
 
 function ChatHeader({ conversation, onOpenHistory, onNew }: { conversation?: Conversation; onOpenHistory: () => void; onNew: () => void }) {
+  const tr = useUiText();
   return (
     <div className="chat-header flex h-16 shrink-0 items-center justify-between gap-2 px-4 md:px-8">
       <div className="flex min-w-0 items-center gap-1">
@@ -268,17 +271,17 @@ function ChatHeader({ conversation, onOpenHistory, onNew }: { conversation?: Con
           type="button"
           onClick={onOpenHistory}
           className="rounded-lg p-2 text-fg-muted hover:bg-muted md:hidden"
-          aria-label="Conversation history"
+          aria-label={tr("Conversation history")}
         >
           <History className="h-[18px] w-[18px]" />
         </button>
-        <h2 className="truncate text-sm font-medium text-fg">{conversation?.title ?? "New conversation"}</h2>
+        <h2 className="truncate text-sm font-medium text-fg">{conversation?.title ?? tr("New conversation")}</h2>
       </div>
       <div className="flex shrink-0 items-center gap-1">
         <ChatUsage />
-        <Button variant="ghost" size="sm" onClick={onNew} aria-label="New chat">
+        <Button variant="ghost" size="sm" onClick={onNew} aria-label={tr("New chat")}>
           <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">New chat</span>
+          <span className="hidden sm:inline">{tr("New chat")}</span>
         </Button>
       </div>
     </div>
@@ -294,6 +297,7 @@ export function chatGreeting(now: Date, timeZone: string): string {
 }
 
 function EmptyChat({ name, onPick }: { name: string; onPick: (s: string) => void }) {
+  const tr = useUiText();
   const i18n = useI18n();
   const tz = useTimezone();
   const recent = useConversations();
@@ -302,13 +306,16 @@ function EmptyChat({ name, onPick }: { name: string; onPick: (s: string) => void
   return (
     <div className="welcome mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center px-5 py-10 md:px-8 animate-fade-in">
       <div className="welcome-eyebrow flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-fg-muted">
-        <span className="h-1.5 w-1.5 rounded-full bg-accent" /> A little space to think
+        <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+        {tr("A little space to think")}
       </div>
       <h1 className="welcome-title mt-5 text-fg">
-        {greeting}.<br />
-        <span>Make room for what matters.</span>
+        {tr(greeting)}
+        {i18n.language === "zh-CN" ? "。" : "."}
+        <br />
+        <span>{tr("Make room for what matters.")}</span>
       </h1>
-      <p className="mt-5 max-w-md text-[15px] leading-7 text-fg-muted">What would you like to do today?</p>
+      <p className="mt-5 max-w-md text-[15px] leading-7 text-fg-muted">{tr("What would you like to do today?")}</p>
       <div className="mt-8 grid gap-3 sm:grid-cols-2">
         {SUGGESTIONS.map((s, index) => {
           const Icon = [CheckSquare, NotebookPen, Brain, CalendarClock][index]!;
@@ -316,7 +323,7 @@ function EmptyChat({ name, onPick }: { name: string; onPick: (s: string) => void
             <button
               type="button"
               key={s}
-              onClick={() => onPick(s)}
+              onClick={() => onPick(tr(s))}
               className="suggestion-card group relative flex items-start gap-3 rounded-xl border border-border bg-surface px-4 py-4 text-left transition-colors hover:border-accent/40 hover:bg-accent-soft"
             >
               <span className="suggestion-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-accent">
@@ -324,9 +331,9 @@ function EmptyChat({ name, onPick }: { name: string; onPick: (s: string) => void
               </span>
               <span>
                 <span className="block text-sm font-medium text-fg">
-                  {["Find your focus", "Move a project forward", "Keep the useful things", "Leave it for later"][index]}
+                  {tr(["Find your focus", "Move a project forward", "Keep the useful things", "Leave it for later"][index]!)}
                 </span>
-                <span className="mt-1 block text-xs leading-5 text-fg-muted">{s}</span>
+                <span className="mt-1 block text-xs leading-5 text-fg-muted">{tr(s)}</span>
               </span>
               <ArrowUpRight className="absolute right-3 top-3 h-3.5 w-3.5 text-fg-subtle opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
             </button>
@@ -335,11 +342,14 @@ function EmptyChat({ name, onPick }: { name: string; onPick: (s: string) => void
       </div>
       <div className="mt-6 flex items-center gap-2 text-xs text-fg-subtle">
         <Logo className="h-4 w-4" />
-        <span>{name}, your personal space for thoughts and plans.</span>
+        <span>
+          {name}
+          {tr(", your personal space for thoughts and plans.")}
+        </span>
       </div>
       {!!recent.data?.length && (
         <div className="mt-10">
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-subtle">Recent conversations</h3>
+          <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-subtle">{tr("Recent conversations")}</h3>
           <ul className="space-y-0.5">
             {recent.data.slice(0, 4).map((c) => (
               <li key={c.id}>
@@ -420,13 +430,14 @@ function AssistantBubble({
   cancelled?: boolean;
   onRetry?: () => void;
 }) {
+  const tr = useUiText();
   const [copied, setCopied] = useState(false);
   return (
     <div className="assistant-message group flex gap-3 animate-fade-in">
       <Logo className="mt-0.5 h-6 w-6 shrink-0" />
       <div className="min-w-0 flex-1 space-y-2.5">
         {tools.length > 0 && (
-          <div role="group" className="tool-activity flex flex-wrap gap-1.5" aria-label="Actions taken">
+          <div role="group" className="tool-activity flex flex-wrap gap-1.5" aria-label={tr("Actions taken")}>
             {tools.map((t) => (
               <ToolChip key={t.id} tool={t} />
             ))}
@@ -437,13 +448,13 @@ function AssistantBubble({
         {text ? (
           <Markdown content={text} />
         ) : streaming && tools.every((t) => t.status !== "running") ? (
-          <div role="status" className="flex h-7 items-center gap-1" aria-label="Thinking">
+          <div role="status" className="flex h-7 items-center gap-1" aria-label={tr("Thinking")}>
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-fg-subtle" />
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-fg-subtle [animation-delay:150ms]" />
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-fg-subtle [animation-delay:300ms]" />
           </div>
         ) : null}
-        {cancelled && <p className="text-xs text-fg-subtle">Stopped.</p>}
+        {cancelled && <p className="text-xs text-fg-subtle">{tr("Stopped.")}</p>}
         {error && (
           <div
             role="alert"
@@ -457,7 +468,8 @@ function AssistantBubble({
                 onClick={onRetry}
                 className="inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline"
               >
-                <RotateCcw className="h-3.5 w-3.5" /> Retry
+                <RotateCcw className="h-3.5 w-3.5" />
+                {tr("Retry")}
               </button>
             )}
           </div>
@@ -473,10 +485,10 @@ function AssistantBubble({
                 })
               }
               className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-fg-subtle hover:bg-muted hover:text-fg"
-              aria-label="Copy response"
+              aria-label={tr("Copy response")}
             >
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? "Copied" : "Copy"}
+              {copied ? tr("Copied") : tr("Copy")}
             </button>
           </div>
         )}
@@ -496,6 +508,7 @@ function Composer({
   onStop: () => void;
   autoFocus?: boolean;
 }) {
+  const tr = useUiText();
   const [value, setValue] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
   useLayoutEffect(() => {
@@ -530,31 +543,34 @@ function Composer({
             onKeyDown={onKeyDown}
             autoFocus={autoFocus}
             maxLength={16000}
-            placeholder="A thought, a task, a little clarity…"
-            aria-label="Message"
+            placeholder={tr("A thought, a task, a little clarity…")}
+            aria-label={tr("Message")}
             className="max-h-[200px] min-h-[40px] min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-[15px] leading-6 placeholder:text-fg-subtle focus:outline-none"
           />
           {streaming ? (
-            <Button variant="secondary" size="icon" onClick={onStop} aria-label="Stop generating" className="rounded-xl">
+            <Button variant="secondary" size="icon" onClick={onStop} aria-label={tr("Stop generating")} className="rounded-xl">
               <Square className="h-3.5 w-3.5 fill-current" />
             </Button>
           ) : (
-            <Button size="icon" onClick={submit} disabled={!value.trim()} aria-label="Send message" className="rounded-xl">
+            <Button size="icon" onClick={submit} disabled={!value.trim()} aria-label={tr("Send message")} className="rounded-xl">
               <ArrowUp className="h-4 w-4" />
             </Button>
           )}
         </div>
         <div className="composer-meta flex items-center justify-between px-2 pt-2 text-[11px] text-fg-muted">
           <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" /> Personal workspace
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            {tr("Personal workspace")}
           </span>
           <span className="hidden sm:block">
-            Enter to send <span className="mx-1 opacity-40">/</span> Shift + Enter for a new line
+            {tr("Enter to send")}
+            <span className="mx-1 opacity-40">/</span>
+            {tr("Shift + Enter for a new line")}
           </span>
         </div>
       </div>
       <p className="mx-auto mt-2 hidden max-w-3xl text-center text-[11px] text-fg-subtle md:block">
-        Buxton can make mistakes. Check important details.
+        {tr("Buxton can make mistakes. Check important details.")}
       </p>
     </div>
   );

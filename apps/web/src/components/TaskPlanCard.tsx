@@ -1,7 +1,15 @@
+import { useUiText } from "../lib/i18n/ui-text";
 import { useEffect, useId, useState } from "react";
 import { Link } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { TASK_PLAN_LIMITS, TASK_PRIORITIES, type PlanTask, type TaskPlanContent, type TaskPlanDraft, type TaskPriority } from "@talorys/shared";
+import {
+  TASK_PLAN_LIMITS,
+  TASK_PRIORITIES,
+  type PlanTask,
+  type TaskPlanContent,
+  type TaskPlanDraft,
+  type TaskPriority,
+} from "@talorys/shared";
 import { ArrowRight, CalendarDays, CheckCircle2, ListChecks, Pencil, RotateCcw, Trash2, XCircle } from "lucide-react";
 import { Badge, Button, Input, Select, Textarea } from "./ui";
 import { keys, useApiMutation, useProjects } from "../hooks/queries";
@@ -37,6 +45,7 @@ type Mutation = { kind: "save" | "confirm"; plan: TaskPlanContent } | { kind: "c
  * edits are saved to the draft on the server so they survive a reload.
  */
 export function TaskPlanCard({ plan: initial }: { plan: TaskPlanDraft }) {
+  const tr = useUiText();
   const qc = useQueryClient();
   const [draft, setDraft] = useState(initial);
   const [editing, setEditing] = useState<TaskPlanContent | null>(null);
@@ -65,7 +74,12 @@ export function TaskPlanCard({ plan: initial }: { plan: TaskPlanDraft }) {
     },
     {
       invalidate: [keys.tasks, keys.projects],
-      success: (r) => (r.plan.status === "confirmed" ? `Created ${r.plan.result?.task_ids.length ?? 0} task(s)` : r.plan.status === "cancelled" ? "Plan cancelled" : "Changes saved"),
+      success: (r) =>
+        r.plan.status === "confirmed"
+          ? `Created ${r.plan.result?.task_ids.length ?? 0} task(s)`
+          : r.plan.status === "cancelled"
+            ? "Plan cancelled"
+            : "Changes saved",
       onSuccess: (r) => {
         setDraft(r.plan);
         setEditing(null);
@@ -77,29 +91,42 @@ export function TaskPlanCard({ plan: initial }: { plan: TaskPlanDraft }) {
   const status = draft.status === "pending" && Date.parse(draft.expires_at) <= Date.now() ? "expired" : draft.status;
   const plan = editing ?? draft.plan;
   const busy = act.isPending;
-  const invalid = plan.tasks.length === 0 || !plan.title.trim() || plan.tasks.some((t) => !t.title.trim()) || (plan.project.mode === "new" && !plan.project.name.trim());
+  const invalid =
+    plan.tasks.length === 0 ||
+    !plan.title.trim() ||
+    plan.tasks.some((t) => !t.title.trim()) ||
+    (plan.project.mode === "new" && !plan.project.name.trim());
 
   if (status === "confirmed") {
     const count = draft.result?.task_ids.length ?? draft.plan.tasks.length;
     return (
-      <div role="group" aria-label="Confirmed plan" className="rounded-lg border border-border bg-subtle px-3 py-2.5 text-sm">
+      <div role="group" aria-label={tr("Confirmed plan")} className="rounded-lg border border-border bg-subtle px-3 py-2.5 text-sm">
         <div className="flex items-start gap-2">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
           <div className="min-w-0 flex-1">
             <p className="break-words font-medium text-fg">{draft.plan.title}</p>
             <p className="text-xs text-fg-muted">
-              Created {count} task{count === 1 ? "" : "s"}
+              {tr("Created")}
+              {count}
+              {tr(" task")}
+              {count === 1 ? "" : "s"}
               {draft.plan.project.mode !== "none" && ` in “${draft.plan.project.name}”`}
               {draft.result?.project_created && " (new project)"}
             </p>
           </div>
-          <Link to="/tasks" className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-accent hover:bg-muted">
-            View tasks <ArrowRight className="h-3.5 w-3.5" />
+          <Link
+            to="/tasks"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-accent hover:bg-muted"
+          >
+            {tr("View tasks")}
+            <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
         <ul className="mt-2 space-y-1 pl-6 text-fg-muted">
           {draft.plan.tasks.map((t) => (
-            <li key={t.client_id} className="break-words">{t.title}</li>
+            <li key={t.client_id} className="break-words">
+              {t.title}
+            </li>
           ))}
         </ul>
       </div>
@@ -108,11 +135,18 @@ export function TaskPlanCard({ plan: initial }: { plan: TaskPlanDraft }) {
 
   if (status === "cancelled" || status === "expired") {
     return (
-      <div role="group" aria-label="Closed plan" className="flex items-start gap-2 rounded-lg border border-border bg-subtle px-3 py-2 text-sm text-fg-muted">
+      <div
+        role="group"
+        aria-label={tr("Closed plan")}
+        className="flex items-start gap-2 rounded-lg border border-border bg-subtle px-3 py-2 text-sm text-fg-muted"
+      >
         <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
         <span className="min-w-0 break-words">
-          <span className="text-fg">Plan “{draft.plan.title}”</span> ·{" "}
-          {status === "cancelled" ? "Cancelled — nothing was created" : "Expired — ask again if you still want it"}
+          <span className="text-fg">
+            {tr("Plan “")}
+            {draft.plan.title}”
+          </span>{" "}
+          · {status === "cancelled" ? tr("Cancelled — nothing was created") : tr("Expired — ask again if you still want it")}
         </span>
       </div>
     );
@@ -124,14 +158,14 @@ export function TaskPlanCard({ plan: initial }: { plan: TaskPlanDraft }) {
     setEditing((e) => e && { ...e, tasks: e.tasks.map((t) => (t.client_id === clientId ? { ...t, ...patch } : t)) });
 
   return (
-    <div role="group" aria-label="Proposed plan" className="rounded-lg border border-accent/30 bg-surface shadow-sm">
+    <div role="group" aria-label={tr("Proposed plan")} className="rounded-lg border border-accent/30 bg-surface shadow-sm">
       <div className="flex items-start gap-2 border-b border-border px-3 py-2.5">
         <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-fg-subtle">Proposed plan</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-fg-subtle">{tr("Proposed plan")}</p>
           {editing ? (
             <Input
-              aria-label="Plan title"
+              aria-label={tr("Plan title")}
               value={editing.title}
               maxLength={TASK_PLAN_LIMITS.title}
               onChange={(e) => setEditing({ ...editing, title: e.target.value })}
@@ -146,7 +180,7 @@ export function TaskPlanCard({ plan: initial }: { plan: TaskPlanDraft }) {
 
       {editing && <ProjectPicker project={editing.project} onChange={(project) => setEditing({ ...editing, project })} />}
 
-      <ol className="divide-y divide-border" aria-label="Proposed tasks">
+      <ol className="divide-y divide-border" aria-label={tr("Proposed tasks")}>
         {plan.tasks.map((t, i) =>
           editing ? (
             <TaskEditor
@@ -171,43 +205,71 @@ export function TaskPlanCard({ plan: initial }: { plan: TaskPlanDraft }) {
         )}
       </ol>
 
-      {editing && plan.tasks.length === 0 && <p className="px-3 py-2 text-sm text-fg-muted">Keep at least one task, or cancel the plan.</p>}
+      {editing && plan.tasks.length === 0 && (
+        <p className="px-3 py-2 text-sm text-fg-muted">{tr("Keep at least one task, or cancel the plan.")}</p>
+      )}
       {removed.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2 text-xs text-fg-muted">
-          <span>{removed.length} removed</span>
+          <span>
+            {removed.length}
+            {tr(" removed")}
+          </span>
           <button
             type="button"
             className="inline-flex items-center gap-1 font-medium text-accent hover:underline"
-            onClick={() => setEditing({ ...editing!, tasks: draft.plan.tasks.map((o) => editing!.tasks.find((e) => e.client_id === o.client_id) ?? o) })}
+            onClick={() =>
+              setEditing({ ...editing!, tasks: draft.plan.tasks.map((o) => editing!.tasks.find((e) => e.client_id === o.client_id) ?? o) })
+            }
           >
-            <RotateCcw className="h-3 w-3" /> Restore
+            <RotateCcw className="h-3 w-3" />
+            {tr("Restore")}
           </button>
         </div>
       )}
 
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-3 py-2.5">
-        <p className="mr-auto text-xs text-fg-muted">{editing ? "Save keeps your edits. Nothing is created until you confirm." : "Nothing is created until you confirm."}</p>
+        <p className="mr-auto text-xs text-fg-muted">
+          {editing ? tr("Save keeps your edits. Nothing is created until you confirm.") : tr("Nothing is created until you confirm.")}
+        </p>
         {editing ? (
           <>
             <Button size="sm" variant="ghost" disabled={busy} onClick={() => setEditing(null)}>
-              Discard edits
+              {tr("Discard edits")}
             </Button>
-            <Button size="sm" variant="outline" disabled={busy || invalid} loading={busy && act.variables?.kind === "save"} onClick={() => act.mutate({ kind: "save", plan: editing })}>
-              Save
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy || invalid}
+              loading={busy && act.variables?.kind === "save"}
+              onClick={() => act.mutate({ kind: "save", plan: editing })}
+            >
+              {tr("Save")}
             </Button>
           </>
         ) : (
           <>
-            <Button size="sm" variant="ghost" disabled={busy} loading={busy && act.variables?.kind === "cancel"} onClick={() => act.mutate({ kind: "cancel" })}>
-              Cancel
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busy}
+              loading={busy && act.variables?.kind === "cancel"}
+              onClick={() => act.mutate({ kind: "cancel" })}
+            >
+              {tr("Cancel")}
             </Button>
             <Button size="sm" variant="outline" disabled={busy} onClick={() => setEditing(structuredClone(draft.plan))}>
-              <Pencil className="h-3.5 w-3.5" /> Edit
+              <Pencil className="h-3.5 w-3.5" />
+              {tr("Edit")}
             </Button>
           </>
         )}
-        <Button size="sm" disabled={busy || invalid} loading={busy && act.variables?.kind === "confirm"} onClick={() => act.mutate({ kind: "confirm", plan })}>
-          Confirm plan
+        <Button
+          size="sm"
+          disabled={busy || invalid}
+          loading={busy && act.variables?.kind === "confirm"}
+          onClick={() => act.mutate({ kind: "confirm", plan })}
+        >
+          {tr("Confirm plan")}
         </Button>
       </div>
     </div>
@@ -215,19 +277,21 @@ export function TaskPlanCard({ plan: initial }: { plan: TaskPlanDraft }) {
 }
 
 function DueChip({ task }: { task: PlanTask }) {
+  const tr = useUiText();
   return (
     <span
       className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs text-fg-muted"
-      title={task.due_suggested ? "Suggested date — you didn't set this deadline" : "Deadline you gave"}
+      title={task.due_suggested ? tr("Suggested date — you didn't set this deadline") : tr("Deadline you gave")}
     >
       <CalendarDays className="h-3 w-3" />
       {dueLabel(task.due!)}
-      {task.due_suggested && <span className="italic">· suggested</span>}
+      {task.due_suggested && <span className="italic">{tr("· suggested")}</span>}
     </span>
   );
 }
 
 function ProjectPicker({ project, onChange }: { project: TaskPlanContent["project"]; onChange: (p: TaskPlanContent["project"]) => void }) {
+  const tr = useUiText();
   const projects = useProjects();
   const id = useId();
   const value = project.mode === "existing" ? project.id : project.mode;
@@ -235,37 +299,39 @@ function ProjectPicker({ project, onChange }: { project: TaskPlanContent["projec
     // Wraps by the card's own width (chat columns are narrow even on desktop), not by viewport breakpoints.
     <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2.5">
       <label htmlFor={`${id}-project`} className="w-full text-xs font-medium text-fg-muted">
-        Project
+        {tr("Project")}
       </label>
       <div className="min-w-40 flex-1">
-      <Select
-        id={`${id}-project`}
-        className="h-9"
-        value={value}
-        onChange={(e) => {
-          const v = e.target.value;
-          if (v === "none") onChange({ mode: "none" });
-          else if (v === "new") onChange({ mode: "new", name: project.mode === "new" ? project.name : "" });
-          else onChange({ mode: "existing", id: v, name: projects.data?.find((p) => p.id === v)?.name });
-        }}
-      >
-        <option value="none">No project</option>
-        <option value="new">New project…</option>
-        {project.mode === "existing" && !projects.data?.some((p) => p.id === project.id) && <option value={project.id}>{project.name ?? "Current project"}</option>}
-        {projects.data
-          ?.filter((p) => p.status !== "archived")
-          .map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-      </Select>
+        <Select
+          id={`${id}-project`}
+          className="h-9"
+          value={value}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === "none") onChange({ mode: "none" });
+            else if (v === "new") onChange({ mode: "new", name: project.mode === "new" ? project.name : "" });
+            else onChange({ mode: "existing", id: v, name: projects.data?.find((p) => p.id === v)?.name });
+          }}
+        >
+          <option value="none">{tr("No project")}</option>
+          <option value="new">{tr("New project…")}</option>
+          {project.mode === "existing" && !projects.data?.some((p) => p.id === project.id) && (
+            <option value={project.id}>{project.name ?? "Current project"}</option>
+          )}
+          {projects.data
+            ?.filter((p) => p.status !== "archived")
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+        </Select>
       </div>
       {project.mode === "new" && (
         <div className="min-w-48 flex-[2]">
           <Input
-            aria-label="New project name"
-            placeholder="Project name"
+            aria-label={tr("New project name")}
+            placeholder={tr("Project name")}
             className={cn("h-9", !project.name.trim() && "border-danger")}
             maxLength={TASK_PLAN_LIMITS.projectName}
             value={project.name}
@@ -277,7 +343,18 @@ function ProjectPicker({ project, onChange }: { project: TaskPlanContent["projec
   );
 }
 
-function TaskEditor({ task, index, onChange, onRemove }: { task: PlanTask; index: number; onChange: (p: Partial<PlanTask>) => void; onRemove: () => void }) {
+function TaskEditor({
+  task,
+  index,
+  onChange,
+  onRemove,
+}: {
+  task: PlanTask;
+  index: number;
+  onChange: (p: Partial<PlanTask>) => void;
+  onRemove: () => void;
+}) {
+  const tr = useUiText();
   const id = useId();
   const n = index + 1;
   return (
@@ -296,7 +373,7 @@ function TaskEditor({ task, index, onChange, onRemove }: { task: PlanTask; index
       </div>
       <Textarea
         aria-label={`Task ${n} description`}
-        placeholder="Description (optional)"
+        placeholder={tr("Description (optional)")}
         rows={2}
         maxLength={TASK_PLAN_LIMITS.taskDescription}
         value={task.description}
@@ -305,10 +382,17 @@ function TaskEditor({ task, index, onChange, onRemove }: { task: PlanTask; index
       />
       <div className="flex flex-wrap items-center gap-2">
         <label htmlFor={`${id}-priority`} className="sr-only">
-          Task {n} priority
+          {tr("Task")}
+          {n}
+          {tr("priority")}
         </label>
         <div className="w-28">
-          <Select id={`${id}-priority`} className="h-9" value={task.priority} onChange={(e) => onChange({ priority: e.target.value as TaskPriority })}>
+          <Select
+            id={`${id}-priority`}
+            className="h-9"
+            value={task.priority}
+            onChange={(e) => onChange({ priority: e.target.value as TaskPriority })}
+          >
             {TASK_PRIORITIES.map((p) => (
               <option key={p} value={p}>
                 {capitalize(p)}
@@ -317,27 +401,34 @@ function TaskEditor({ task, index, onChange, onRemove }: { task: PlanTask; index
           </Select>
         </div>
         <label htmlFor={`${id}-due`} className="sr-only">
-          Task {n} due date
+          {tr("Task")}
+          {n}
+          {tr("due date")}
         </label>
         <div className="w-40">
-        <Input
-          id={`${id}-due`}
-          type="date"
-          className="h-9"
-          value={task.due?.slice(0, 10) ?? ""}
-          onChange={(e) => {
-            const date = e.target.value;
-            // Picking a date makes it the owner's own deadline; a time the agent proposed is kept.
-            onChange({ due: date ? `${date}${task.due?.slice(10) ?? ""}` : null, due_suggested: false });
-          }}
-        />
+          <Input
+            id={`${id}-due`}
+            type="date"
+            className="h-9"
+            value={task.due?.slice(0, 10) ?? ""}
+            onChange={(e) => {
+              const date = e.target.value;
+              // Picking a date makes it the owner's own deadline; a time the agent proposed is kept.
+              onChange({ due: date ? `${date}${task.due?.slice(10) ?? ""}` : null, due_suggested: false });
+            }}
+          />
         </div>
         {task.due && (
-          <Button size="sm" variant="ghost" onClick={() => onChange({ due: null, due_suggested: false })} aria-label={`Clear due date of task ${n}`}>
-            Clear date
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onChange({ due: null, due_suggested: false })}
+            aria-label={`Clear due date of task ${n}`}
+          >
+            {tr("Clear date")}
           </Button>
         )}
-        {task.due && task.due_suggested && <span className="text-xs italic text-fg-muted">Suggested date</span>}
+        {task.due && task.due_suggested && <span className="text-xs italic text-fg-muted">{tr("Suggested date")}</span>}
       </div>
     </li>
   );

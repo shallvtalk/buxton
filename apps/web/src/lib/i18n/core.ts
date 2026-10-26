@@ -1,6 +1,7 @@
-import { type Language, LANGUAGES } from "@talorys/shared";
+import { type Language, UI_LANGUAGES } from "./languages";
 import { en } from "./en";
 import { ko } from "./ko";
+import { zh } from "./zh";
 
 type PluralCategory = Intl.LDMLPluralRule;
 /** A message whose form depends on {count}. "other" is required because every language has it. */
@@ -25,7 +26,7 @@ type ParamName<K extends MessageKey> = Placeholders<MessageText<Messages[K]>> | 
  */
 export type MessageParams<K extends MessageKey, V> = [ParamName<K>] extends [never] ? [] : [params: Record<ParamName<K>, V | number>];
 
-const translations: Record<Language, Translation> = { en, ko };
+const translations: Record<Language, Translation> = { en, ko, "zh-CN": zh };
 
 const pluralRules = new Map<string, Intl.PluralRules>();
 const numberFormats = new Map<string, Intl.NumberFormat>();
@@ -40,7 +41,7 @@ function cached<T>(cache: Map<string, T>, key: string, create: () => T): T {
 }
 
 export function isLanguage(value: unknown): value is Language {
-  return (LANGUAGES as readonly unknown[]).includes(value);
+  return (UI_LANGUAGES as readonly unknown[]).includes(value);
 }
 
 /**

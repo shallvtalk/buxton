@@ -30,6 +30,17 @@ Warm paper surfaces, ink text, a clay accent, system sans-serif for controls and
 
 This is a custom frontend using the existing React components, not an assistant-ui or CopilotKit integration. The original MIT license and Talorys attribution remain in the repository.
 
+## Interface languages
+
+![Simplified Chinese settings](design/settings-zh.png)
+
+
+Settings → General → Language includes **简体中文** alongside English, Korean, and the browser default. The frontend recognizes Chinese browser locales, sets `html[lang]` to `zh-CN`, and formats dates and numbers accordingly.
+
+Chinese is saved in this browser and survives refresh, sign-out, and sign-in. It intentionally does not send `zh-CN` to the upstream backend, whose unchanged settings schema accepts only English, Korean, or system. Choosing English or Korean retains the original account-sync behavior. Service-generated notifications, tool summaries, and AI responses retain their original language; user-authored notes, messages, and code are never translated.
+
+Frontend locale definitions live in `src/lib/i18n/languages.ts`. Existing keyed messages use `zh.ts`; the remaining upstream and Buxton interface copy uses `zh-ui.ts` through explicit React hooks, without DOM rewriting or third-party translation requests.
+
 ## Run locally
 
 From the repository root (Node.js 22+):

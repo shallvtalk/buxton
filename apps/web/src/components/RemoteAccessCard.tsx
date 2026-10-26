@@ -1,3 +1,4 @@
+import { useUiText } from "../lib/i18n/ui-text";
 import { type ReactNode, useState } from "react";
 import { GITHUB_URL, type RemoteScope, type RemoteTokenInfo, REMOTE_TOKEN_PREFIX } from "@talorys/shared";
 import { Copy, KeyRound } from "lucide-react";
@@ -8,8 +9,7 @@ import { api } from "../lib/api";
 import { relativeTime } from "../lib/utils";
 import { useI18n } from "../lib/i18n";
 
-const DESCRIPTION =
-  "Create personal access tokens so scripts and other apps can use your Talorys data over HTTPS.";
+const DESCRIPTION = "Create personal access tokens so scripts and other apps can use your Talorys data over HTTPS.";
 const SUSPENDED_HINT = "Tokens stay suspended until you turn this back on.";
 const WRITE_HINT = "Write can create, update, and delete tasks, notes, reminders, and memories.";
 const DOCS_URL = `${GITHUB_URL}/blob/main/docs/remote-access.md`;
@@ -20,11 +20,12 @@ function curlExample(token: string): string {
 }
 
 function Row({ label, hint, children }: { label: ReactNode; hint?: ReactNode; children: ReactNode }) {
+  const tr = useUiText();
   return (
     <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <div className="text-sm font-medium">{label}</div>
-        {hint && <div className="mt-0.5 text-xs leading-5 text-fg-subtle">{hint}</div>}
+        <div className="text-sm font-medium">{typeof label === "string" ? tr(label) : label}</div>
+        {hint && <div className="mt-0.5 text-xs leading-5 text-fg-subtle">{typeof hint === "string" ? tr(hint) : hint}</div>}
       </div>
       <div className="shrink-0">{children}</div>
     </div>
@@ -33,6 +34,7 @@ function Row({ label, hint, children }: { label: ReactNode; hint?: ReactNode; ch
 
 /** Settings card for personal access tokens: the on/off switch, a generate form, the once-only plaintext and the token list. */
 export function RemoteAccessCard() {
+  const tr = useUiText();
   const i18n = useI18n();
   const toast = useToast();
   const status = useRemoteStatus();
@@ -79,7 +81,7 @@ export function RemoteAccessCard() {
   const error = status.error ?? tokens.error;
   return (
     <section className="space-y-2">
-      <h2 className="px-1 text-xs font-medium uppercase tracking-wider text-fg-subtle">Remote access</h2>
+      <h2 className="px-1 text-xs font-medium uppercase tracking-wider text-fg-subtle">{tr("Remote access")}</h2>
       <Card>
         <div className="divide-y divide-border">
           {error ? (
@@ -91,25 +93,21 @@ export function RemoteAccessCard() {
               <Row
                 label={
                   <span className="flex items-center gap-2">
-                    Remote access {!enabled && <Badge tone="warning">Suspended</Badge>}
+                    {tr("Remote access")}
+                    {!enabled && <Badge tone="warning">{tr("Suspended")}</Badge>}
                   </span>
                 }
                 hint={
                   <>
                     {DESCRIPTION}{" "}
                     <a href={DOCS_URL} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
-                      How to use access tokens
+                      {tr("How to use access tokens")}
                     </a>
-                    {!enabled && (
-                      <>
-                        {" "}
-                        {SUSPENDED_HINT}
-                      </>
-                    )}
+                    {!enabled && <> {SUSPENDED_HINT}</>}
                   </>
                 }
               >
-                <Switch checked={enabled} onChange={(on) => toggle.mutate(on)} label="Remote access" disabled={toggle.isPending} />
+                <Switch checked={enabled} onChange={(on) => toggle.mutate(on)} label={tr("Remote access")} disabled={toggle.isPending} />
               </Row>
               <form
                 className="space-y-3 px-5 py-4"
@@ -120,32 +118,41 @@ export function RemoteAccessCard() {
               >
                 <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
                   <div>
-                    <Label htmlFor="remote-token-name">Token name</Label>
-                    <Input id="remote-token-name" value={name} maxLength={64} placeholder="e.g. Home server" onChange={(e) => setName(e.target.value)} />
+                    <Label htmlFor="remote-token-name">{tr("Token name")}</Label>
+                    <Input
+                      id="remote-token-name"
+                      value={name}
+                      maxLength={64}
+                      placeholder={tr("e.g. Home server")}
+                      onChange={(e) => setName(e.target.value)}
+                    />
                   </div>
                   <div>
-                    <Label htmlFor="remote-token-scope">Scope</Label>
+                    <Label htmlFor="remote-token-scope">{tr("Scope")}</Label>
                     <Select id="remote-token-scope" value={scope} onChange={(e) => setScope(e.target.value as RemoteScope)}>
-                      <option value="read">read</option>
-                      <option value="write">write</option>
+                      <option value="read">{tr("read")}</option>
+                      <option value="write">{tr("write")}</option>
                     </Select>
                   </div>
                 </div>
                 {scope === "write" && <p className="text-xs leading-5 text-warning">{WRITE_HINT}</p>}
                 <div className="flex justify-end">
                   <Button type="submit" loading={create.isPending} disabled={!enabled || !name.trim()}>
-                    <KeyRound className="h-4 w-4" /> Generate token
+                    <KeyRound className="h-4 w-4" />
+                    {tr("Generate token")}
                   </Button>
                 </div>
               </form>
               {plaintext && (
-                <div className="space-y-3 bg-subtle px-5 py-4" role="region" aria-label="New access token">
-                  <p className="text-sm font-medium text-warning">Copy this token now. It will not be shown again.</p>
-                  <code className="block break-all rounded-lg border border-border bg-surface px-3 py-2 font-mono text-sm">{plaintext}</code>
+                <div className="space-y-3 bg-subtle px-5 py-4" role="region" aria-label={tr("New access token")}>
+                  <p className="text-sm font-medium text-warning">{tr("Copy this token now. It will not be shown again.")}</p>
+                  <code className="block break-all rounded-lg border border-border bg-surface px-3 py-2 font-mono text-sm">
+                    {plaintext}
+                  </code>
                   <p className="text-xs leading-5 text-fg-subtle">
-                    Use it as a Bearer token.{" "}
+                    {tr("Use it as a Bearer token.")}{" "}
                     <a href={DOCS_URL} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
-                      Docs
+                      {tr("Docs")}
                     </a>
                   </p>
                   <code
@@ -156,19 +163,21 @@ export function RemoteAccessCard() {
                   </code>
                   <div className="flex flex-wrap justify-end gap-2">
                     <Button variant="outline" size="sm" onClick={() => void copy(plaintext)}>
-                      <Copy className="h-3.5 w-3.5" /> Copy
+                      <Copy className="h-3.5 w-3.5" />
+                      {tr("Copy")}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => void copy(curlExample(plaintext), "Example copied")}>
-                      <Copy className="h-3.5 w-3.5" /> Copy example
+                      <Copy className="h-3.5 w-3.5" />
+                      {tr("Copy example")}
                     </Button>
                     <Button variant="secondary" size="sm" onClick={() => setPlaintext(null)}>
-                      Done
+                      {tr("Done")}
                     </Button>
                   </div>
                 </div>
               )}
               {list.length === 0 ? (
-                <p className="px-5 py-4 text-sm text-fg-subtle">No access tokens yet.</p>
+                <p className="px-5 py-4 text-sm text-fg-subtle">{tr("No access tokens yet.")}</p>
               ) : (
                 list.map((t) => (
                   <Row
@@ -178,8 +187,14 @@ export function RemoteAccessCard() {
                   >
                     <div className="flex items-center gap-2">
                       <Badge tone={t.scope === "write" ? "warning" : "neutral"}>{t.scope}</Badge>
-                      <Button variant="ghost" size="sm" aria-label={`Revoke ${t.name}`} onClick={() => revoke.mutate(t)} disabled={revoke.isPending}>
-                        Revoke
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Revoke ${t.name}`}
+                        onClick={() => revoke.mutate(t)}
+                        disabled={revoke.isPending}
+                      >
+                        {tr("Revoke")}
                       </Button>
                     </div>
                   </Row>
@@ -187,10 +202,19 @@ export function RemoteAccessCard() {
               )}
               <div className="flex justify-between gap-2 px-5 py-3">
                 <p className="self-center text-xs text-fg-subtle">
-                  {list.length} of {status.data.max_tokens} tokens.
+                  {list.length}
+                  {tr(" of ")}
+                  {status.data.max_tokens}
+                  {tr("tokens.")}
                 </p>
-                <Button variant="outline" size="sm" className="text-danger" onClick={() => setConfirmAll(true)} disabled={list.length === 0}>
-                  Revoke all
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-danger"
+                  onClick={() => setConfirmAll(true)}
+                  disabled={list.length === 0}
+                >
+                  {tr("Revoke all")}
                 </Button>
               </div>
             </>
@@ -199,9 +223,9 @@ export function RemoteAccessCard() {
       </Card>
       <ConfirmDialog
         open={confirmAll}
-        title="Revoke all access tokens?"
-        message="Every machine client using a token loses access at once. This cannot be undone."
-        confirmLabel="Revoke all"
+        title={tr("Revoke all access tokens?")}
+        message={tr("Every machine client using a token loses access at once. This cannot be undone.")}
+        confirmLabel={tr("Revoke all")}
         onCancel={() => setConfirmAll(false)}
         onConfirm={() => revokeAll.mutate(undefined)}
         loading={revokeAll.isPending}

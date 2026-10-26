@@ -1,7 +1,15 @@
+import { useUiText } from "../lib/i18n/ui-text";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { checkPasswordStrength, LANGUAGES, LIMIT_CEILINGS, type Limits, type MemoryHistorySettings, type Settings, TALORYS_VERSION } from "@talorys/shared";
+import {
+  checkPasswordStrength,
+  LIMIT_CEILINGS,
+  type Limits,
+  type MemoryHistorySettings,
+  type Settings,
+  TALORYS_VERSION,
+} from "@talorys/shared";
 import { Download, ExternalLink, LogOut, Monitor, Moon, Sun, Upload } from "lucide-react";
 import { Badge, Button, Card, ConfirmDialog, ErrorNotice, Input, Label, PageHeader, Select, Spinner, Switch } from "../components/ui";
 import { SemanticRecallCard } from "../components/SemanticRecallCard";
@@ -14,17 +22,18 @@ import { useToast, errorMessage } from "../hooks/toast";
 import { api, ApiError } from "../lib/api";
 import { applyTheme } from "../lib/theme";
 import { cn, relativeTime } from "../lib/utils";
-import { applyLanguage, browserLanguage, LANGUAGE_NAMES, useI18n } from "../lib/i18n";
+import { applyDeviceLanguage, type LanguagePreference, UI_LANGUAGES, browserLanguage, LANGUAGE_NAMES, useI18n } from "../lib/i18n";
 
 const TABS = ["General", "AI", "Privacy", "Security", "About"] as const;
 type Tab = (typeof TABS)[number];
 
 function Row({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
+  const tr = useUiText();
   return (
     <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="text-sm font-medium">{label}</p>
-        {hint && <p className="mt-0.5 text-xs leading-5 text-fg-subtle">{hint}</p>}
+        <p className="text-sm font-medium">{tr(label ?? "")}</p>
+        {hint && <p className="mt-0.5 text-xs leading-5 text-fg-subtle">{typeof hint === "string" ? tr(hint) : hint}</p>}
       </div>
       <div className="shrink-0 sm:w-64">{children}</div>
     </div>
@@ -32,9 +41,10 @@ function Row({ label, hint, children }: { label: string; hint?: ReactNode; child
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
+  const tr = useUiText();
   return (
     <section className="space-y-2">
-      <h2 className="px-1 text-xs font-medium uppercase tracking-wider text-fg-subtle">{title}</h2>
+      <h2 className="px-1 text-xs font-medium uppercase tracking-wider text-fg-subtle">{tr(title)}</h2>
       <Card>
         <div className="divide-y divide-border">{children}</div>
       </Card>
@@ -43,6 +53,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export default function SettingsPage() {
+  const tr = useUiText();
   const [searchParams, setSearchParams] = useSearchParams();
   const param = searchParams.get("tab");
   const tab: Tab = TABS.find((t) => t === param) ?? "General";
@@ -50,10 +61,11 @@ export default function SettingsPage() {
   const { data: settings, isLoading, error, refetch } = useSettings();
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-8">
-      <PageHeader title="Settings" />
+      <PageHeader title={tr("Settings")} />
       <div className="mb-6 flex gap-1 overflow-x-auto border-b border-border" role="tablist">
         {TABS.map((t) => (
-          <button type="button"
+          <button
+            type="button"
             key={t}
             role="tab"
             aria-selected={tab === t}
@@ -63,7 +75,7 @@ export default function SettingsPage() {
               tab === t ? "border-accent text-fg" : "border-transparent text-fg-muted hover:text-fg",
             )}
           >
-            {t}
+            {tr(t)}
           </button>
         ))}
       </div>
@@ -89,7 +101,10 @@ export default function SettingsPage() {
 
 function useSaveSettings() {
   const qc = useQueryClient();
-  type Patch = Partial<Omit<Settings, "limits" | "memoryHistory">> & { limits?: Partial<Limits>; memoryHistory?: Partial<MemoryHistorySettings> };
+  type Patch = Partial<Omit<Settings, "limits" | "memoryHistory">> & {
+    limits?: Partial<Limits>;
+    memoryHistory?: Partial<MemoryHistorySettings>;
+  };
   return useApiMutation((patch: Patch) => api<{ settings: Settings }>("/settings", { method: "PATCH", body: patch }), {
     success: "Settings saved",
     onSuccess: (r) => {
@@ -102,14 +117,15 @@ function useSaveSettings() {
 }
 
 function GeneralTab({ settings }: { settings: Settings }) {
+  const tr = useUiText();
   const save = useSaveSettings();
-  const { t } = useI18n();
+  const { t, preference } = useI18n();
   const [name, setName] = useState(settings.agentName);
   const zones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [settings.timezone];
   const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   return (
-    <Section title="General">
-      <Row label="Agent name" hint="How your assistant introduces itself.">
+    <Section title={tr("General")}>
+      <Row label={tr("Agent name")} hint={tr("How your assistant introduces itself.")}>
         <form
           className="flex gap-2"
           onSubmit={(e) => {
@@ -117,25 +133,30 @@ function GeneralTab({ settings }: { settings: Settings }) {
             if (name.trim() && name !== settings.agentName) save.mutate({ agentName: name.trim() });
           }}
         >
-          <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} aria-label="Agent name" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} aria-label={tr("Agent name")} />
           <Button type="submit" variant="outline" disabled={!name.trim() || name === settings.agentName}>
-            Save
+            {tr("Save")}
           </Button>
         </form>
       </Row>
       <Row
-        label="Timezone"
+        label={tr("Timezone")}
         hint={
           settings.timezone !== browserTz ? (
-            <button type="button" className="text-accent underline-offset-2 hover:underline" onClick={() => save.mutate({ timezone: browserTz })}>
-              Use this device's timezone ({browserTz})
+            <button
+              type="button"
+              className="text-accent underline-offset-2 hover:underline"
+              onClick={() => save.mutate({ timezone: browserTz })}
+            >
+              {tr("Use this device's timezone (")}
+              {browserTz})
             </button>
           ) : (
             "Used for due dates and schedules. Changing it re-schedules automations."
           )
         }
       >
-        <Select value={settings.timezone} onChange={(e) => save.mutate({ timezone: e.target.value })} aria-label="Timezone">
+        <Select value={settings.timezone} onChange={(e) => save.mutate({ timezone: e.target.value })} aria-label={tr("Timezone")}>
           {(zones.includes(settings.timezone) ? zones : [settings.timezone, ...zones]).map((z) => (
             <option key={z} value={z}>
               {z}
@@ -145,23 +166,23 @@ function GeneralTab({ settings }: { settings: Settings }) {
       </Row>
       <Row label={t("settings.language")} hint={t("settings.languageHint")}>
         <Select
-          value={settings.language}
+          value={preference}
           onChange={(e) => {
-            const value = e.target.value as Settings["language"];
-            applyLanguage(value);
-            save.mutate({ language: value });
+            const value = e.target.value as LanguagePreference;
+            applyDeviceLanguage(value);
+            if (value !== "zh-CN") save.mutate({ language: value });
           }}
           aria-label={t("settings.language")}
         >
           <option value="system">{t("settings.languageSystem", { language: LANGUAGE_NAMES[browserLanguage()] })}</option>
-          {LANGUAGES.map((language) => (
+          {UI_LANGUAGES.map((language) => (
             <option key={language} value={language} lang={language}>
               {LANGUAGE_NAMES[language]}
             </option>
           ))}
         </Select>
       </Row>
-      <Row label="Theme">
+      <Row label={tr("Theme")}>
         <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
           {(
             [
@@ -170,7 +191,8 @@ function GeneralTab({ settings }: { settings: Settings }) {
               ["dark", Moon],
             ] as const
           ).map(([value, Icon]) => (
-            <button type="button"
+            <button
+              type="button"
               key={value}
               onClick={() => {
                 applyTheme(value);
@@ -182,7 +204,7 @@ function GeneralTab({ settings }: { settings: Settings }) {
               )}
             >
               <Icon className="h-3.5 w-3.5" />
-              {value}
+              {tr(value)}
             </button>
           ))}
         </div>
@@ -201,6 +223,7 @@ const LIMIT_FIELDS: { key: keyof Limits; label: string; hint: string }[] = [
 ];
 
 function AiTab({ settings }: { settings: Settings }) {
+  const tr = useUiText();
   const i18n = useI18n();
   const save = useSaveSettings();
   const usage = useUsage();
@@ -210,8 +233,8 @@ function AiTab({ settings }: { settings: Settings }) {
   const dirtyLimits = JSON.stringify(limits) !== JSON.stringify(settings.limits) || temperature !== settings.temperature;
   return (
     <>
-      <Section title="Model">
-        <Row label="Workers AI model" hint="Default: @cf/zai-org/glm-4.7-flash. Must support tool calling.">
+      <Section title={tr("Model")}>
+        <Row label={tr("Workers AI model")} hint={tr("Default: @cf/zai-org/glm-4.7-flash. Must support tool calling.")}>
           <form
             className="flex gap-2"
             onSubmit={(e) => {
@@ -219,40 +242,57 @@ function AiTab({ settings }: { settings: Settings }) {
               if (model !== settings.model) save.mutate({ model: model.trim() });
             }}
           >
-            <Input value={model} onChange={(e) => setModel(e.target.value)} aria-label="Model id" className="font-mono text-xs" />
+            <Input value={model} onChange={(e) => setModel(e.target.value)} aria-label={tr("Model id")} className="font-mono text-xs" />
             <Button type="submit" variant="outline" disabled={model === settings.model}>
-              Save
+              {tr("Save")}
             </Button>
           </form>
         </Row>
-        <Row label="Learn from conversations" hint="Let Talorys save clearly lasting preferences without being asked. Off = only explicit “remember …”.">
+        <Row
+          label={tr("Learn from conversations")}
+          hint={tr("Let Talorys save clearly lasting preferences without being asked. Off = only explicit “remember …”.")}
+        >
           <div className="flex justify-end">
-            <Switch checked={settings.autoMemory} onChange={(v) => save.mutate({ autoMemory: v })} label="Learn from conversations" />
+            <Switch checked={settings.autoMemory} onChange={(v) => save.mutate({ autoMemory: v })} label={tr("Learn from conversations")} />
           </div>
         </Row>
-        <Row label="Demo mode" hint="Replaces Workers AI with a simple offline responder. Useful when your AI quota is exhausted. Never enabled automatically.">
+        <Row
+          label={tr("Demo mode")}
+          hint={tr(
+            "Replaces Workers AI with a simple offline responder. Useful when your AI quota is exhausted. Never enabled automatically.",
+          )}
+        >
           <div className="flex justify-end">
-            <Switch checked={settings.demoMode} onChange={(v) => save.mutate({ demoMode: v })} label="Demo mode" />
+            <Switch checked={settings.demoMode} onChange={(v) => save.mutate({ demoMode: v })} label={tr("Demo mode")} />
           </div>
         </Row>
       </Section>
 
-      <Section title="Generation & execution limits">
-        <Row label="Temperature" hint="Lower is more focused and predictable.">
+      <Section title={tr("Generation & execution limits")}>
+        <Row label={tr("Temperature")} hint={tr("Lower is more focused and predictable.")}>
           <div className="flex items-center gap-3">
-            <input type="range" min={0} max={1.5} step={0.1} value={temperature} onChange={(e) => setTemperature(Number(e.target.value))} className="flex-1 accent-[var(--accent)]" aria-label="Temperature" />
+            <input
+              type="range"
+              min={0}
+              max={1.5}
+              step={0.1}
+              value={temperature}
+              onChange={(e) => setTemperature(Number(e.target.value))}
+              className="flex-1 accent-[var(--accent)]"
+              aria-label={tr("Temperature")}
+            />
             <span className="w-8 text-right text-sm tabular-nums">{temperature.toFixed(1)}</span>
           </div>
         </Row>
         {LIMIT_FIELDS.map((f) => (
-          <Row key={f.key} label={f.label} hint={`${f.hint} Max ${LIMIT_CEILINGS[f.key]}.`}>
+          <Row key={f.key} label={f.label} hint={`${tr(f.hint)} ${tr("Max")} ${LIMIT_CEILINGS[f.key]}.`}>
             <Input
               type="number"
               min={0}
               max={LIMIT_CEILINGS[f.key]}
               value={limits[f.key]}
               onChange={(e) => setLimits({ ...limits, [f.key]: Number(e.target.value) })}
-              aria-label={f.label}
+              aria-label={tr(f.label)}
             />
           </Row>
         ))}
@@ -265,15 +305,15 @@ function AiTab({ settings }: { settings: Settings }) {
               setTemperature(settings.temperature);
             }}
           >
-            Reset
+            {tr("Reset")}
           </Button>
           <Button disabled={!dirtyLimits} loading={save.isPending} onClick={() => save.mutate({ limits, temperature })}>
-            Save limits
+            {tr("Save limits")}
           </Button>
         </div>
       </Section>
 
-      <Section title="Usage">
+      <Section title={tr("Usage")}>
         {usage.isLoading || !usage.data ? (
           <div className="flex justify-center p-6">
             <Spinner />
@@ -288,31 +328,44 @@ function AiTab({ settings }: { settings: Settings }) {
                 ["Scheduled AI runs", `${usage.data.today.scheduled_ai_runs} / ${usage.data.limits.maxScheduledAiRunsPerDay}`],
               ].map(([label, value]) => (
                 <div key={label} className="bg-surface px-5 py-4">
-                  <p className="text-xs text-fg-subtle">{label}</p>
+                  <p className="text-xs text-fg-subtle">{tr(label ?? "")}</p>
                   <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
                 </div>
               ))}
             </div>
             <div className="grid gap-px bg-border md:grid-cols-2">
               <div className="bg-surface px-5 py-4">
-                <h3 className="mb-3 text-sm font-medium">Today (UTC)</h3>
+                <h3 className="mb-3 text-sm font-medium">{tr("Today (UTC)")}</h3>
                 <UsageBreakdown counters={usage.data.today} />
               </div>
               <div className="bg-surface px-5 py-4">
-                <h3 className="mb-3 text-sm font-medium">Last 7 days</h3>
+                <h3 className="mb-3 text-sm font-medium">{tr("Last 7 days")}</h3>
                 <p className="mb-3 text-xs tabular-nums text-fg-muted">
-                  {usage.data.last_7_days.ai_requests.toLocaleString(i18n.locale)} chat-model requests · {usage.data.last_7_days.ai_errors.toLocaleString(i18n.locale)} errors · {usage.data.last_7_days.tool_calls.toLocaleString(i18n.locale)} tool calls · {usage.data.last_7_days.scheduled_ai_runs.toLocaleString(i18n.locale)} scheduled AI runs
+                  {usage.data.last_7_days.ai_requests.toLocaleString(i18n.locale)}
+                  {tr(" chat-model requests · ")}
+                  {usage.data.last_7_days.ai_errors.toLocaleString(i18n.locale)}
+                  {tr(" errors · ")}
+                  {usage.data.last_7_days.tool_calls.toLocaleString(i18n.locale)}
+                  {tr(" tool calls · ")}
+                  {usage.data.last_7_days.scheduled_ai_runs.toLocaleString(i18n.locale)}
+                  {tr("scheduled AI runs")}
                 </p>
                 <UsageBreakdown counters={usage.data.last_7_days} />
               </div>
             </div>
             <div className="px-5 py-4 text-xs leading-5 text-fg-subtle">
               <Badge tone="warning" className="mb-2">
-                Estimates, not billing data
+                {tr("Estimates, not billing data")}
               </Badge>
               <UsagePricingNote data={usage.data} />
-              <a href={usage.data.dashboard_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-accent hover:underline">
-                Open Workers AI usage in the Cloudflare dashboard <ExternalLink className="h-3 w-3" />
+              <a
+                href={usage.data.dashboard_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-accent hover:underline"
+              >
+                {tr("Open Workers AI usage in the Cloudflare dashboard")}
+                <ExternalLink className="h-3 w-3" />
               </a>
             </div>
           </>
@@ -325,22 +378,38 @@ function AiTab({ settings }: { settings: Settings }) {
 }
 
 function MemoryHistorySection({ settings }: { settings: Settings }) {
+  const tr = useUiText();
   const save = useSaveSettings();
   const mh = settings.memoryHistory;
   return (
-    <Section title="Memory history">
+    <Section title={tr("Memory history")}>
       <Row
-        label="Memory conflict review"
-        hint="Flags a new memory that may replace or contradict an older one (“I sold my car…”) for your review on the Memory page. Never retires a memory on its own. Uses no AI."
+        label={tr("Memory conflict review")}
+        hint={tr(
+          "Flags a new memory that may replace or contradict an older one (“I sold my car…”) for your review on the Memory page. Never retires a memory on its own. Uses no AI.",
+        )}
       >
         <div className="flex justify-end">
-          <Switch checked={mh.conflictReview} onChange={(v) => save.mutate({ memoryHistory: { conflictReview: v } })} label="Memory conflict review" />
+          <Switch
+            checked={mh.conflictReview}
+            onChange={(v) => save.mutate({ memoryHistory: { conflictReview: v } })}
+            label={tr("Memory conflict review")}
+          />
         </div>
       </Row>
       {mh.conflictReview && (
-        <Row label="Check conflicts with AI" hint="Let Clef, Cloudflare's decision model, decide whether a new memory replaces an older one. Only a confident replacement marks the older one as past; unclear cases wait for review. Uses one AI request per save that has possible conflicts.">
+        <Row
+          label={tr("Check conflicts with AI")}
+          hint={tr(
+            "Let Clef, Cloudflare's decision model, decide whether a new memory replaces an older one. Only a confident replacement marks the older one as past; unclear cases wait for review. Uses one AI request per save that has possible conflicts.",
+          )}
+        >
           <div className="flex justify-end">
-            <Switch checked={mh.aiConflictCheck} onChange={(v) => save.mutate({ memoryHistory: { aiConflictCheck: v } })} label="Check conflicts with AI" />
+            <Switch
+              checked={mh.aiConflictCheck}
+              onChange={(v) => save.mutate({ memoryHistory: { aiConflictCheck: v } })}
+              label={tr("Check conflicts with AI")}
+            />
           </div>
         </Row>
       )}
@@ -349,6 +418,7 @@ function MemoryHistorySection({ settings }: { settings: Settings }) {
 }
 
 function PrivacyTab() {
+  const tr = useUiText();
   const { t } = useI18n();
   const toast = useToast();
   const qc = useQueryClient();
@@ -356,7 +426,8 @@ function PrivacyTab() {
   const [importing, setImporting] = useState(false);
   const [confirm, setConfirm] = useState<"history" | "memories" | null>(null);
   const clear = useApiMutation(
-    (what: "history" | "memories") => api(what === "history" ? "/conversations" : "/memories", { method: "DELETE", body: { confirm: "DELETE" } }),
+    (what: "history" | "memories") =>
+      api(what === "history" ? "/conversations" : "/memories", { method: "DELETE", body: { confirm: "DELETE" } }),
     {
       invalidate: [["conversations"], ["memories"]],
       success: (r) => `Deleted ${(r as { deleted: number }).deleted} item(s)`,
@@ -378,7 +449,11 @@ function PrivacyTab() {
         automations_paused ? `${automations_paused} automation(s) imported paused — enable them in Automations` : "",
         ignored_settings.length ? `kept your current ${ignored_settings.join(", ")} settings` : "",
       ].filter(Boolean);
-      toast(`Imported ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(", ")}${notes.length ? `. ${notes.join("; ")}.` : ""}`);
+      toast(
+        `Imported ${Object.entries(counts)
+          .map(([k, v]) => `${v} ${k}`)
+          .join(", ")}${notes.length ? `. ${notes.join("; ")}.` : ""}`,
+      );
       await qc.invalidateQueries();
     } catch (error) {
       toast(error instanceof SyntaxError ? "That file is not valid JSON." : errorMessage(error, t("common.somethingWentWrong")), "error");
@@ -390,39 +465,63 @@ function PrivacyTab() {
 
   return (
     <>
-      <Section title="Your data">
+      <Section title={tr("Your data")}>
         <div className="px-5 py-4 text-sm leading-6 text-fg-muted">
-          Everything Talorys stores lives in a Durable Object in your own Cloudflare account. Nothing is sent to the Talorys developers. Messages are processed by Cloudflare Workers AI when you chat.
+          {tr(
+            "Everything Talorys stores lives in a Durable Object in your own Cloudflare account. Nothing is sent to the Talorys developers. Messages are processed by Cloudflare Workers AI when you chat.",
+          )}
         </div>
-        <Row label="Export data" hint="Conversations, memories, tasks, notes, projects, settings and automations as talorys-backup.json. Sessions and credentials are never exported.">
-          <a href="/api/export" download="talorys-backup.json" className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-medium hover:bg-subtle">
-            <Download className="h-4 w-4" /> Download backup
+        <Row
+          label={tr("Export data")}
+          hint={tr(
+            "Conversations, memories, tasks, notes, projects, settings and automations as talorys-backup.json. Sessions and credentials are never exported.",
+          )}
+        >
+          <a
+            href="/api/export"
+            download="talorys-backup.json"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-medium hover:bg-subtle"
+          >
+            <Download className="h-4 w-4" />
+            {tr("Download backup")}
           </a>
         </Row>
-        <Row label="Import data" hint="Merges a backup into your data. Existing items with the same id are updated, except automations, which are kept as they are; new automations arrive paused. Model, limits, demo mode, auto-memory and memory history settings are not imported. Nothing is deleted.">
-          <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => e.target.files?.[0] && void onImport(e.target.files[0])} />
+        <Row
+          label={tr("Import data")}
+          hint={tr(
+            "Merges a backup into your data. Existing items with the same id are updated, except automations, which are kept as they are; new automations arrive paused. Model, limits, demo mode, auto-memory and memory history settings are not imported. Nothing is deleted.",
+          )}
+        >
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && void onImport(e.target.files[0])}
+          />
           <Button variant="outline" className="w-full justify-center" loading={importing} onClick={() => fileRef.current?.click()}>
-            <Upload className="h-4 w-4" /> Choose backup file
+            <Upload className="h-4 w-4" />
+            {tr("Choose backup file")}
           </Button>
         </Row>
       </Section>
-      <Section title="Danger zone">
-        <Row label="Delete conversation history" hint="Permanently deletes all conversations and messages.">
+      <Section title={tr("Danger zone")}>
+        <Row label={tr("Delete conversation history")} hint={tr("Permanently deletes all conversations and messages.")}>
           <Button variant="outline" className="w-full justify-center text-danger" onClick={() => setConfirm("history")}>
-            Delete history
+            {tr("Delete history")}
           </Button>
         </Row>
-        <Row label="Clear memories" hint="Talorys forgets everything it learned about you.">
+        <Row label={tr("Clear memories")} hint={tr("Talorys forgets everything it learned about you.")}>
           <Button variant="outline" className="w-full justify-center text-danger" onClick={() => setConfirm("memories")}>
-            Clear memories
+            {tr("Clear memories")}
           </Button>
         </Row>
       </Section>
       <ConfirmDialog
         open={!!confirm}
-        title={confirm === "history" ? "Delete all conversations?" : "Clear all memories?"}
-        message="This cannot be undone. Consider exporting a backup first."
-        confirmLabel={confirm === "history" ? "Delete all" : "Clear all"}
+        title={confirm === "history" ? tr("Delete all conversations?") : tr("Clear all memories?")}
+        message={tr("This cannot be undone. Consider exporting a backup first.")}
+        confirmLabel={confirm === "history" ? tr("Delete all") : tr("Clear all")}
         onCancel={() => setConfirm(null)}
         onConfirm={() => confirm && clear.mutate(confirm)}
         loading={clear.isPending}
@@ -432,6 +531,7 @@ function PrivacyTab() {
 }
 
 function SecurityTab() {
+  const tr = useUiText();
   const i18n = useI18n();
   const { logout } = useSession();
   const sessions = useSessions();
@@ -449,7 +549,10 @@ function SecurityTab() {
       setConfirmNext("");
     },
   });
-  const revoke = useApiMutation((id: string) => api(`/auth/sessions/${id}`, { method: "DELETE" }), { invalidate: [keys.sessions], success: "Session signed out" });
+  const revoke = useApiMutation((id: string) => api(`/auth/sessions/${id}`, { method: "DELETE" }), {
+    invalidate: [keys.sessions],
+    success: "Session signed out",
+  });
   const revokeOthers = useApiMutation(() => api("/auth/sessions/revoke-others", { method: "POST", body: {} }), {
     invalidate: [keys.sessions],
     success: "Signed out other sessions",
@@ -458,7 +561,7 @@ function SecurityTab() {
 
   return (
     <>
-      <Section title="Change password">
+      <Section title={tr("Change password")}>
         <form
           className="space-y-4 px-5 py-4"
           onSubmit={(e) => {
@@ -471,29 +574,41 @@ function SecurityTab() {
         >
           <input type="text" autoComplete="username" value="owner" readOnly hidden />
           <div>
-            <Label htmlFor="pw-current">Current password</Label>
-            <Input id="pw-current" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
+            <Label htmlFor="pw-current">{tr("Current password")}</Label>
+            <Input
+              id="pw-current"
+              type="password"
+              autoComplete="current-password"
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+            />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="pw-new">New password</Label>
+              <Label htmlFor="pw-new">{tr("New password")}</Label>
               <Input id="pw-new" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} />
               {next && <p className={cn("mt-1 text-xs", strength ? "text-warning" : "text-success")}>{strength ?? "Strong enough"}</p>}
             </div>
             <div>
-              <Label htmlFor="pw-confirm">Confirm new password</Label>
-              <Input id="pw-confirm" type="password" autoComplete="new-password" value={confirmNext} onChange={(e) => setConfirmNext(e.target.value)} />
+              <Label htmlFor="pw-confirm">{tr("Confirm new password")}</Label>
+              <Input
+                id="pw-confirm"
+                type="password"
+                autoComplete="new-password"
+                value={confirmNext}
+                onChange={(e) => setConfirmNext(e.target.value)}
+              />
             </div>
           </div>
           {formError && <p className="text-sm text-danger">{formError}</p>}
           <div className="flex justify-end">
             <Button type="submit" loading={change.isPending} disabled={!current || !next || !confirmNext}>
-              Change password
+              {tr("Change password")}
             </Button>
           </div>
         </form>
       </Section>
-      <Section title="Active sessions">
+      <Section title={tr("Active sessions")}>
         {sessions.isLoading ? (
           <div className="flex justify-center p-6">
             <Spinner />
@@ -503,15 +618,18 @@ function SecurityTab() {
             <div key={s.id} className="flex items-center justify-between gap-3 px-5 py-3">
               <div className="min-w-0">
                 <p className="truncate text-sm">
-                  {describeAgent(s.user_agent)} {s.current && <Badge tone="accent">This device</Badge>}
+                  {describeAgent(s.user_agent)} {s.current && <Badge tone="accent">{tr("This device")}</Badge>}
                 </p>
                 <p className="text-xs text-fg-subtle">
-                  Signed in {relativeTime(s.created_at, i18n)} · active {relativeTime(s.last_seen_at, i18n)}
+                  {tr("Signed in")}
+                  {relativeTime(s.created_at, i18n)}
+                  {tr(" · active ")}
+                  {relativeTime(s.last_seen_at, i18n)}
                 </p>
               </div>
               {!s.current && (
                 <Button variant="ghost" size="sm" onClick={() => revoke.mutate(s.id)}>
-                  Sign out
+                  {tr("Sign out")}
                 </Button>
               )}
             </div>
@@ -519,16 +637,18 @@ function SecurityTab() {
         )}
         <div className="flex flex-wrap justify-end gap-2 px-5 py-3">
           <Button variant="outline" size="sm" onClick={() => revokeOthers.mutate(undefined)} loading={revokeOthers.isPending}>
-            Sign out other sessions
+            {tr("Sign out other sessions")}
           </Button>
           <Button variant="secondary" size="sm" onClick={() => void logout()}>
-            <LogOut className="h-3.5 w-3.5" /> Lock this device
+            <LogOut className="h-3.5 w-3.5" />
+            {tr("Lock this device")}
           </Button>
         </div>
       </Section>
       <p className="px-1 text-xs leading-5 text-fg-subtle">
-        Forgot your password? On your computer, run <code className="rounded bg-muted px-1">npx create-talorys@latest reset-password</code> in your Talorys
-        directory. This signs out every device.
+        {tr("Forgot your password? On your computer, run")}
+        <code className="rounded bg-muted px-1">npx create-talorys@latest reset-password</code>
+        {tr("in your Talorys directory. This signs out every device.")}
       </p>
       <RemoteAccessCard />
     </>
@@ -536,50 +656,111 @@ function SecurityTab() {
 }
 
 function describeAgent(ua: string): string {
-  const browser = /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "Browser";
-  const os = /iPhone|iPad/.test(ua) ? "iOS" : /Android/.test(ua) ? "Android" : /Mac OS X/.test(ua) ? "macOS" : /Windows/.test(ua) ? "Windows" : /Linux/.test(ua) ? "Linux" : "";
+  const browser = /Edg\//.test(ua)
+    ? "Edge"
+    : /Chrome\//.test(ua)
+      ? "Chrome"
+      : /Firefox\//.test(ua)
+        ? "Firefox"
+        : /Safari\//.test(ua)
+          ? "Safari"
+          : "Browser";
+  const os = /iPhone|iPad/.test(ua)
+    ? "iOS"
+    : /Android/.test(ua)
+      ? "Android"
+      : /Mac OS X/.test(ua)
+        ? "macOS"
+        : /Windows/.test(ua)
+          ? "Windows"
+          : /Linux/.test(ua)
+            ? "Linux"
+            : "";
   return os ? `${browser} on ${os}` : browser;
 }
 
 function AboutTab({ settings }: { settings: Settings }) {
+  const tr = useUiText();
   const info = useSystemInfo();
   const update = useUpdateStatus();
   const save = useSaveSettings();
   const latest = update.data?.update_available ? update.data.latest : null;
   return (
-    <Section title="About Buxton">
-      <p className="text-sm leading-6 text-fg-muted">Buxton workspace, powered by Talorys. The original agent, storage and deployment architecture are preserved.</p>
-      <Row label="Version" hint={latest ? `Upstream Talorys ${latest} is available. Review it in the Buxton fork before updating.` : undefined}>
+    <Section title={tr("About Buxton")}>
+      <p className="text-sm leading-6 text-fg-muted">
+        {tr("Buxton workspace, powered by Talorys. The original agent, storage and deployment architecture are preserved.")}
+      </p>
+      <Row
+        label={tr("Version")}
+        hint={latest ? `Upstream Talorys ${latest} is available. Review it in the Buxton fork before updating.` : undefined}
+      >
         <div className="flex items-center justify-end gap-2">
-          {latest && <Badge tone="accent">New</Badge>}
+          {latest && <Badge tone="accent">{tr("New")}</Badge>}
           <p className="font-mono text-sm">{info.data?.deployed_version ?? TALORYS_VERSION}</p>
         </div>
       </Row>
-      <Row label="Check for updates" hint="Once a day, your Worker asks the npm registry for the latest version number. Nothing about you or your data is sent.">
+      <Row
+        label={tr("Check for updates")}
+        hint={tr("Once a day, your Worker asks the npm registry for the latest version number. Nothing about you or your data is sent.")}
+      >
         <div className="flex justify-end">
-          <Switch checked={settings.updateCheck} onChange={(v) => save.mutate({ updateCheck: v })} label="Check for updates" />
+          <Switch checked={settings.updateCheck} onChange={(v) => save.mutate({ updateCheck: v })} label={tr("Check for updates")} />
         </div>
       </Row>
-      <Row label="Deployment" hint="Your own Cloudflare account. Pages frontend → service binding → private Worker → Durable Object.">
+      <Row
+        label={tr("Deployment")}
+        hint={tr("Your own Cloudflare account. Pages frontend → service binding → private Worker → Durable Object.")}
+      >
         <div className="space-y-1 text-right text-xs text-fg-muted">
           {info.data ? (
             <>
-              <p>Installation: <span className="font-mono">{info.data.installation_id ?? "local"}</span></p>
-              <p>Schema v{info.data.schema_version} · {info.data.environment}</p>
-              <p>AI: {info.data.ai_provider === "workers-ai" ? "Cloudflare Workers AI" : info.data.ai_provider === "mock" ? "Demo responder" : "Not available"}</p>
+              <p>
+                {tr("Installation: ")}
+                <span className="font-mono">{info.data.installation_id ?? "local"}</span>
+              </p>
+              <p>
+                {tr("Schema v")}
+                {info.data.schema_version} · {info.data.environment}
+              </p>
+              <p>
+                {tr("AI: ")}
+                {info.data.ai_provider === "workers-ai"
+                  ? tr("Cloudflare Workers AI")
+                  : info.data.ai_provider === "mock"
+                    ? tr("Demo responder")
+                    : tr("Not available")}
+              </p>
             </>
           ) : (
             <Spinner className="ml-auto h-4 w-4" />
           )}
         </div>
       </Row>
-      <Row label="Source code" hint="Free and open source under the MIT license.">
-        <a href="https://github.com/shallvtalk/buxton" target="_blank" rel="noopener noreferrer" className="flex items-center justify-end gap-1 text-sm text-accent hover:underline">
-          GitHub <ExternalLink className="h-3.5 w-3.5" />
+      <Row label={tr("Source code")} hint={tr("Free and open source under the MIT license.")}>
+        <a
+          href="https://github.com/shallvtalk/buxton"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-end gap-1 text-sm text-accent hover:underline"
+        >
+          {tr("GitHub")}
+          <ExternalLink className="h-3.5 w-3.5" />
         </a>
       </Row>
-      <Row label="Update" hint="Build this fork, then run its local installer against your installation directory. The npm upstream update replaces the Buxton frontend.">
-        <a href="https://github.com/shallvtalk/buxton/blob/main/apps/web/README.md" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline">Buxton update guide ↗</a>
+      <Row
+        label={tr("Update")}
+        hint={tr(
+          "Build this fork, then run its local installer against your installation directory. The npm upstream update replaces the Buxton frontend.",
+        )}
+      >
+        <a
+          href="https://github.com/shallvtalk/buxton/blob/main/apps/web/README.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-accent hover:underline"
+        >
+          {tr("Buxton update guide ↗")}
+        </a>
       </Row>
     </Section>
   );

@@ -1,7 +1,32 @@
+import { useUiText } from "../lib/i18n/ui-text";
 import { useMemo, useState } from "react";
-import { type Automation, type AutomationKind, type AutomationRun, type ScheduleSpec, describeSchedule, getZonedParts, scheduleSpecSchema, upcomingRuns } from "@talorys/shared";
+import {
+  type Automation,
+  type AutomationKind,
+  type AutomationRun,
+  type ScheduleSpec,
+  describeSchedule,
+  getZonedParts,
+  scheduleSpecSchema,
+  upcomingRuns,
+} from "@talorys/shared";
 import { AlarmClock, Bell, Bot, CalendarClock, ChevronDown, History, ListChecks, Pencil, Play, Plus, Trash2 } from "lucide-react";
-import { Badge, Button, Card, ConfirmDialog, Dialog, EmptyState, ErrorNotice, Input, Label, PageHeader, Select, Spinner, Switch, Textarea } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  ConfirmDialog,
+  Dialog,
+  EmptyState,
+  ErrorNotice,
+  Input,
+  Label,
+  PageHeader,
+  Select,
+  Spinner,
+  Switch,
+  Textarea,
+} from "../components/ui";
 import { keys, useApiMutation, useAutomationRuns, useAutomations } from "../hooks/queries";
 import { api } from "../lib/api";
 import { cn, formatDateTime, relativeTime } from "../lib/utils";
@@ -10,12 +35,17 @@ import { useI18n } from "../lib/i18n";
 const KIND_META: Record<AutomationKind, { label: string; icon: typeof Bell; hint: string }> = {
   reminder: { label: "Reminder", icon: Bell, hint: "Shows your message in the notification center. No AI used." },
   task_digest: { label: "Task digest", icon: ListChecks, hint: "Summarizes overdue and due-today tasks. No AI used." },
-  agent_prompt: { label: "AI routine", icon: Bot, hint: "Runs a prompt with read-only tools. Uses Workers AI and counts toward the daily scheduled-AI budget." },
+  agent_prompt: {
+    label: "AI routine",
+    icon: Bot,
+    hint: "Runs a prompt with read-only tools. Uses Workers AI and counts toward the daily scheduled-AI budget.",
+  },
 };
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function AutomationsPage() {
+  const tr = useUiText();
   const i18n = useI18n();
   const { data, isLoading, error, refetch } = useAutomations();
   const [creating, setCreating] = useState(false);
@@ -25,23 +55,24 @@ export default function AutomationsPage() {
   const [runFilter, setRunFilter] = useState<RunFilter>("all");
   const tz = data?.timezone ?? "UTC";
 
-  const toggle = useApiMutation(
-    (a: Automation) => api(`/automations/${a.id}`, { method: "PATCH", body: { enabled: !a.enabled } }),
-    { invalidate: [keys.automations] },
-  );
+  const toggle = useApiMutation((a: Automation) => api(`/automations/${a.id}`, { method: "PATCH", body: { enabled: !a.enabled } }), {
+    invalidate: [keys.automations],
+  });
   const remove = useApiMutation((id: string) => api(`/automations/${id}`, { method: "DELETE" }), {
     invalidate: [keys.automations],
     success: "Schedule deleted",
     onSuccess: () => setDeleting(null),
   });
 
-  const runNow = useApiMutation(
-    (a: Automation) => api<{ run: AutomationRun }>(`/automations/${a.id}/run`, { method: "POST" }),
-    {
-      invalidate: [keys.automations, keys.notifications],
-      success: ({ run }) => (run.status === "error" ? `Run failed: ${run.error ?? "unknown error"}` : run.status === "skipped" ? "Run skipped" : "Ran successfully"),
-    },
-  );
+  const runNow = useApiMutation((a: Automation) => api<{ run: AutomationRun }>(`/automations/${a.id}/run`, { method: "POST" }), {
+    invalidate: [keys.automations, keys.notifications],
+    success: ({ run }) =>
+      run.status === "error"
+        ? `Run failed: ${run.error ?? "unknown error"}`
+        : run.status === "skipped"
+          ? "Run skipped"
+          : "Ran successfully",
+  });
 
   const recentRuns = useMemo(() => {
     if (!data) return [];
@@ -73,13 +104,19 @@ export default function AutomationsPage() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate font-medium">{a.name}</p>
-            {a.status === "failed" && <Badge tone="danger">Last run failed</Badge>}
-            {a.status === "completed" && <Badge>Completed</Badge>}
-            {a.status === "running" && <Badge tone="accent">Running</Badge>}
+            {a.status === "failed" && <Badge tone="danger">{tr("Last run failed")}</Badge>}
+            {a.status === "completed" && <Badge>{tr("Completed")}</Badge>}
+            {a.status === "running" && <Badge tone="accent">{tr("Running")}</Badge>}
           </div>
           <p className="mt-0.5 text-sm text-fg-muted">{a.schedule_description}</p>
           <p className="mt-0.5 text-xs text-fg-subtle">
-            {a.next_run && a.enabled ? `Next: ${formatDateTime(a.next_run, tz, i18n.locale)} (${relativeTime(a.next_run, i18n)})` : a.status === "completed" ? "Finished" : a.enabled ? "Not scheduled" : "Paused"}
+            {a.next_run && a.enabled
+              ? `Next: ${formatDateTime(a.next_run, tz, i18n.locale)} (${relativeTime(a.next_run, i18n)})`
+              : a.status === "completed"
+                ? tr("Finished")
+                : a.enabled
+                  ? tr("Not scheduled")
+                  : tr("Paused")}
             {a.last_run && ` · Last run ${relativeTime(a.last_run, i18n)}`}
             {a.run_count > 0 && ` · ${a.run_count} run${a.run_count === 1 ? "" : "s"}`}
           </p>
@@ -92,11 +129,17 @@ export default function AutomationsPage() {
             onClick={() => runNow.mutate(a)}
             disabled={a.status === "running" || (runNow.isPending && runNow.variables?.id === a.id)}
             aria-label={`Run ${a.name} now`}
-            title="Run now"
+            title={tr("Run now")}
           >
             {runNow.isPending && runNow.variables?.id === a.id ? <Spinner className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setHistory(a)} aria-label={`Run history for ${a.name}`} title="Run history">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setHistory(a)}
+            aria-label={`Run history for ${a.name}`}
+            title={tr("Run history")}
+          >
             <History className="h-4 w-4" />
           </Button>
           {a.status !== "completed" && (
@@ -116,11 +159,17 @@ export default function AutomationsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-8">
       <PageHeader
-        title="Automations"
-        description={<>Reminders and routines run inside your Cloudflare account, even when this page is closed. Times use {tz}.</>}
+        title={tr("Automations")}
+        description={
+          <>
+            {tr("Reminders and routines run inside your Cloudflare account, even when this page is closed. Times use ")}
+            {tz}.
+          </>
+        }
         actions={
           <Button onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4" /> New
+            <Plus className="h-4 w-4" />
+            {tr("New")}
           </Button>
         }
       />
@@ -134,16 +183,20 @@ export default function AutomationsPage() {
       ) : !data?.automations.length && !data?.runs.length ? (
         <EmptyState
           icon={<CalendarClock className="h-9 w-9" />}
-          title="No automations yet"
-          action={<Button variant="outline" onClick={() => setCreating(true)}>Create a reminder</Button>}
+          title={tr("No automations yet")}
+          action={
+            <Button variant="outline" onClick={() => setCreating(true)}>
+              {tr("Create a reminder")}
+            </Button>
+          }
         >
-          Try asking in chat: “Remind me tomorrow at 9 AM to exercise” or “Every Friday, review my unfinished tasks.”
+          {tr("Try asking in chat: “Remind me tomorrow at 9 AM to exercise” or “Every Friday, review my unfinished tasks.”")}
         </EmptyState>
       ) : (
         <div className="space-y-8">
           {upcoming.length > 0 && (
             <section>
-              <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-subtle">Upcoming</h2>
+              <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-subtle">{tr("Upcoming")}</h2>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {upcoming.map((a) => (
                   <div key={a.id} className="min-w-44 rounded-xl border border-border bg-surface px-4 py-3">
@@ -158,7 +211,7 @@ export default function AutomationsPage() {
           )}
           {active.length > 0 && (
             <section>
-              <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-subtle">Active schedules</h2>
+              <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-subtle">{tr("Active schedules")}</h2>
               <Card>
                 <ul className="divide-y divide-border">{active.map(row)}</ul>
               </Card>
@@ -166,7 +219,7 @@ export default function AutomationsPage() {
           )}
           {inactive.length > 0 && (
             <section>
-              <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-subtle">Paused & completed</h2>
+              <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-subtle">{tr("Paused & completed")}</h2>
               <Card>
                 <ul className="divide-y divide-border">{inactive.map(row)}</ul>
               </Card>
@@ -174,11 +227,13 @@ export default function AutomationsPage() {
           )}
           <section>
             <div className="mb-2 flex items-center justify-between gap-2">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-fg-subtle">Recent executions</h2>
+              <h2 className="text-xs font-medium uppercase tracking-wider text-fg-subtle">{tr("Recent executions")}</h2>
               <RunFilterTabs value={runFilter} onChange={setRunFilter} />
             </div>
             {!recentRuns.length ? (
-              <p className="text-sm text-fg-subtle">{runFilter === "all" ? "Nothing has run yet." : `No ${RUN_FILTERS[runFilter].toLowerCase()} runs.`}</p>
+              <p className="text-sm text-fg-subtle">
+                {runFilter === "all" ? tr("Nothing has run yet.") : `No ${RUN_FILTERS[runFilter].toLowerCase()} runs.`}
+              </p>
             ) : (
               <Card>
                 <ul className="divide-y divide-border">
@@ -193,11 +248,17 @@ export default function AutomationsPage() {
         </div>
       )}
 
-      <AutomationForm key={editing?.id ?? "new"} open={creating || !!editing} onClose={() => (editing ? setEditing(null) : setCreating(false))} tz={tz} automation={editing} />
+      <AutomationForm
+        key={editing?.id ?? "new"}
+        open={creating || !!editing}
+        onClose={() => (editing ? setEditing(null) : setCreating(false))}
+        tz={tz}
+        automation={editing}
+      />
       <RunHistoryDialog key={history?.id ?? "none"} automation={history} tz={tz} onClose={() => setHistory(null)} />
       <ConfirmDialog
         open={!!deleting}
-        title="Delete schedule?"
+        title={tr("Delete schedule?")}
         message={`“${deleting?.name}” will stop running and be removed.`}
         onCancel={() => setDeleting(null)}
         onConfirm={() => deleting && remove.mutate(deleting.id)}
@@ -213,15 +274,19 @@ const RUN_TONE = { success: "success", error: "danger", skipped: "warning", runn
 const RUN_LABEL = { success: "Success", error: "Failed", skipped: "Skipped", running: "Running" } as const;
 
 function RunFilterTabs({ value, onChange }: { value: RunFilter; onChange: (v: RunFilter) => void }) {
+  const tr = useUiText();
   return (
-    <div className="flex gap-1 rounded-lg bg-subtle p-0.5" role="group" aria-label="Filter runs">
+    <div className="flex gap-1 rounded-lg bg-subtle p-0.5" role="group" aria-label={tr("Filter runs")}>
       {(Object.keys(RUN_FILTERS) as RunFilter[]).map((f) => (
         <button
           type="button"
           key={f}
           onClick={() => onChange(f)}
           aria-pressed={value === f}
-          className={cn("rounded-md px-2 py-0.5 text-xs font-medium", value === f ? "bg-surface text-fg shadow-sm" : "text-fg-muted hover:text-fg")}
+          className={cn(
+            "rounded-md px-2 py-0.5 text-xs font-medium",
+            value === f ? "bg-surface text-fg shadow-sm" : "text-fg-muted hover:text-fg",
+          )}
         >
           {RUN_FILTERS[f]}
         </button>
@@ -239,17 +304,21 @@ function duration(run: AutomationRun): string {
 
 /** One execution; click to expand the full output or error. */
 function RunItem({ run, tz, showName, onOpenHistory }: { run: AutomationRun; tz: string; showName?: boolean; onOpenHistory?: () => void }) {
+  const tr = useUiText();
   const i18n = useI18n();
   const [open, setOpen] = useState(false);
   const detail = run.error ?? run.result ?? (run.status === "running" ? "Running…" : "");
   const took = duration(run);
   return (
     <li className="text-sm">
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-start gap-3 px-4 py-2.5 text-left hover:bg-subtle">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-start gap-3 px-4 py-2.5 text-left hover:bg-subtle"
+      >
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium">
-            {showName ? run.automation_name : formatDateTime(run.started_at, tz, i18n.locale)}
-          </p>
+          <p className="truncate font-medium">{showName ? run.automation_name : formatDateTime(run.started_at, tz, i18n.locale)}</p>
           <p className={cn("text-xs", open ? "hidden" : "truncate", run.status === "error" ? "text-danger" : "text-fg-subtle")}>{detail}</p>
         </div>
         <div className="shrink-0 text-right">
@@ -264,18 +333,26 @@ function RunItem({ run, tz, showName, onOpenHistory }: { run: AutomationRun; tz:
       {open && (
         <div className="space-y-2 px-4 pb-3">
           {detail ? (
-            <p className={cn("whitespace-pre-wrap break-words rounded-lg bg-subtle px-3 py-2 text-xs", run.status === "error" ? "text-danger" : "text-fg-muted")}>{detail}</p>
+            <p
+              className={cn(
+                "whitespace-pre-wrap break-words rounded-lg bg-subtle px-3 py-2 text-xs",
+                run.status === "error" ? "text-danger" : "text-fg-muted",
+              )}
+            >
+              {detail}
+            </p>
           ) : (
-            <p className="text-xs text-fg-subtle">No output recorded.</p>
+            <p className="text-xs text-fg-subtle">{tr("No output recorded.")}</p>
           )}
           <p className="text-xs text-fg-subtle">
-            Started {formatDateTime(run.started_at, tz, i18n.locale)}
+            {tr("Started")}
+            {formatDateTime(run.started_at, tz, i18n.locale)}
             {run.finished_at && ` · finished ${formatDateTime(run.finished_at, tz, i18n.locale)}`}
             {onOpenHistory && (
               <>
                 {" · "}
                 <button type="button" onClick={onOpenHistory} className="text-accent hover:underline">
-                  All runs of this automation
+                  {tr("All runs of this automation")}
                 </button>
               </>
             )}
@@ -287,11 +364,12 @@ function RunItem({ run, tz, showName, onOpenHistory }: { run: AutomationRun; tz:
 }
 
 function RunHistoryDialog({ automation, tz, onClose }: { automation: Automation | null; tz: string; onClose: () => void }) {
+  const tr = useUiText();
   const [filter, setFilter] = useState<RunFilter>("all");
   const query = useAutomationRuns(automation?.id ?? null, filter === "all" ? undefined : filter);
   const runs = query.data?.pages.flatMap((p) => p.runs) ?? [];
   return (
-    <Dialog open={!!automation} onClose={onClose} title={automation ? `Run history · ${automation.name}` : "Run history"}>
+    <Dialog open={!!automation} onClose={onClose} title={automation ? `Run history · ${automation.name}` : tr("Run history")}>
       {automation && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
@@ -308,7 +386,9 @@ function RunHistoryDialog({ automation, tz, onClose }: { automation: Automation 
               <Spinner />
             </div>
           ) : !runs.length ? (
-            <p className="py-6 text-center text-sm text-fg-subtle">{filter === "all" ? "This automation hasn't run yet." : `No ${RUN_FILTERS[filter].toLowerCase()} runs.`}</p>
+            <p className="py-6 text-center text-sm text-fg-subtle">
+              {filter === "all" ? tr("This automation hasn't run yet.") : `No ${RUN_FILTERS[filter].toLowerCase()} runs.`}
+            </p>
           ) : (
             <Card>
               <ul className="max-h-[50vh] divide-y divide-border overflow-y-auto">
@@ -320,7 +400,7 @@ function RunHistoryDialog({ automation, tz, onClose }: { automation: Automation 
           )}
           {query.hasNextPage && (
             <Button variant="outline" className="w-full" onClick={() => void query.fetchNextPage()} loading={query.isFetchingNextPage}>
-              Load more
+              {tr("Load more")}
             </Button>
           )}
         </div>
@@ -341,7 +421,18 @@ export function tomorrowAt9(timeZone: string, now = new Date()): string {
   return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())}T09:00`;
 }
 
-function AutomationForm({ open, onClose, tz, automation }: { open: boolean; onClose: () => void; tz: string; automation?: Automation | null }) {
+function AutomationForm({
+  open,
+  onClose,
+  tz,
+  automation,
+}: {
+  open: boolean;
+  onClose: () => void;
+  tz: string;
+  automation?: Automation | null;
+}) {
+  const tr = useUiText();
   const i18n = useI18n();
   // Remounted per automation (via `key`), so editing starts from the saved values.
   const initial = automation?.schedule;
@@ -370,7 +461,8 @@ function AutomationForm({ open, onClose, tz, automation }: { open: boolean; onCl
     const parsed = scheduleSpecSchema.safeParse(schedule);
     if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid schedule", runs: [] as Date[] };
     const runs = upcomingRuns(parsed.data, tz, new Date(), 3);
-    if (!runs.length) return { error: type === "once" ? "That time is in the past. Choose a future time." : "This schedule never runs.", runs };
+    if (!runs.length)
+      return { error: type === "once" ? "That time is in the past. Choose a future time." : "This schedule never runs.", runs };
     return { error: null, runs };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(schedule), tz]);
@@ -405,14 +497,18 @@ function AutomationForm({ open, onClose, tz, automation }: { open: boolean; onCl
     <Dialog
       open={open}
       onClose={onClose}
-      title={automation ? "Edit automation" : "New automation"}
+      title={automation ? tr("Edit automation") : tr("New automation")}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {tr("Cancel")}
           </Button>
-          <Button onClick={() => save.mutate(undefined)} loading={save.isPending} disabled={(needsMessage && !message.trim()) || !!preview.error}>
-            {automation ? "Save" : "Create"}
+          <Button
+            onClick={() => save.mutate(undefined)}
+            loading={save.isPending}
+            disabled={(needsMessage && !message.trim()) || !!preview.error}
+          >
+            {automation ? tr("Save") : tr("Create")}
           </Button>
         </>
       }
@@ -423,66 +519,82 @@ function AutomationForm({ open, onClose, tz, automation }: { open: boolean; onCl
             {(Object.keys(KIND_META) as AutomationKind[]).map((k) => {
               const Icon = KIND_META[k].icon;
               return (
-                <button type="button"
+                <button
+                  type="button"
                   key={k}
                   onClick={() => setKind(k)}
                   className={cn(
                     "flex flex-col items-center gap-1.5 rounded-lg border px-2 py-3 text-xs font-medium transition-colors",
                     kind === k ? "border-accent bg-accent-soft text-accent" : "border-border text-fg-muted hover:bg-subtle",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {KIND_META[k].label}
-              </button>
-            );
-          })}
-        </div>
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tr(KIND_META[k].label)}
+                </button>
+              );
+            })}
+          </div>
         )}
-        <p className="text-xs text-fg-subtle">{KIND_META[kind].hint}</p>
+        <p className="text-xs text-fg-subtle">{tr(KIND_META[kind].hint)}</p>
         <div>
-          <Label htmlFor="auto-name" hint="Optional">
-            Name
+          <Label htmlFor="auto-name" hint={tr("Optional")}>
+            {tr("Name")}
           </Label>
-          <Input id="auto-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} placeholder={kind === "task_digest" ? "Morning priorities" : "Exercise"} />
+          <Input
+            id="auto-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={200}
+            placeholder={kind === "task_digest" ? tr("Morning priorities") : tr("Exercise")}
+          />
         </div>
         {needsMessage && (
           <div>
-            <Label htmlFor="auto-message">{kind === "reminder" ? "Reminder message" : "Prompt"}</Label>
+            <Label htmlFor="auto-message">{kind === "reminder" ? tr("Reminder message") : tr("Prompt")}</Label>
             <Textarea
               id="auto-message"
               rows={kind === "agent_prompt" ? 3 : 2}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               maxLength={4000}
-              placeholder={kind === "reminder" ? "Time to exercise" : "Review my unfinished tasks and suggest three priorities"}
+              placeholder={kind === "reminder" ? tr("Time to exercise") : tr("Review my unfinished tasks and suggest three priorities")}
             />
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2 sm:col-span-1">
-            <Label htmlFor="auto-type">Repeat</Label>
+            <Label htmlFor="auto-type">{tr("Repeat")}</Label>
             <Select id="auto-type" value={type} onChange={(e) => setType(e.target.value as ScheduleSpec["type"])}>
-              <option value="once">Once</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="interval">Every N minutes</option>
+              <option value="once">{tr("Once")}</option>
+              <option value="daily">{tr("Daily")}</option>
+              <option value="weekly">{tr("Weekly")}</option>
+              <option value="monthly">{tr("Monthly")}</option>
+              <option value="interval">{tr("Every N minutes")}</option>
             </Select>
           </div>
           <div className="col-span-2 sm:col-span-1">
             {type === "once" ? (
               <>
-                <Label htmlFor="auto-at">When</Label>
+                <Label htmlFor="auto-at">{tr("When")}</Label>
                 <Input id="auto-at" type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} />
               </>
             ) : type === "interval" ? (
               <>
-                <Label htmlFor="auto-min" hint="At least 15">Minutes</Label>
-                <Input id="auto-min" type="number" min={15} max={44640} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} />
+                <Label htmlFor="auto-min" hint={tr("At least 15")}>
+                  {tr("Minutes")}
+                </Label>
+                <Input
+                  id="auto-min"
+                  type="number"
+                  min={15}
+                  max={44640}
+                  value={minutes}
+                  onChange={(e) => setMinutes(Number(e.target.value))}
+                />
               </>
             ) : (
               <>
-                <Label htmlFor="auto-time">Time</Label>
+                <Label htmlFor="auto-time">{tr("Time")}</Label>
                 <Input id="auto-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
               </>
             )}
@@ -490,51 +602,63 @@ function AutomationForm({ open, onClose, tz, automation }: { open: boolean; onCl
         </div>
         {type === "weekly" && (
           <div className="space-y-2">
-          <div className="flex flex-wrap gap-1.5">
-            {([["Weekdays", [1, 2, 3, 4, 5]], ["Weekends", [0, 6]], ["Every day", [0, 1, 2, 3, 4, 5, 6]]] as const).map(([label, set]) => (
-              <button
-                type="button"
-                key={label}
-                onClick={() => setDays([...set])}
-                className="rounded-full border border-border px-2.5 py-0.5 text-xs text-fg-muted hover:bg-subtle"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Days of week">
-            {DAYS.map((d, i) => (
-              <button type="button"
-                key={d}
-                onClick={() => setDays((cur) => (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]))}
-                aria-pressed={days.includes(i)}
-                className={cn(
-                  "h-9 w-11 rounded-lg border text-xs font-medium",
-                  days.includes(i) ? "border-accent bg-accent-soft text-accent" : "border-border text-fg-muted",
-                )}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
+            <div className="flex flex-wrap gap-1.5">
+              {(
+                [
+                  ["Weekdays", [1, 2, 3, 4, 5]],
+                  ["Weekends", [0, 6]],
+                  ["Every day", [0, 1, 2, 3, 4, 5, 6]],
+                ] as const
+              ).map(([label, set]) => (
+                <button
+                  type="button"
+                  key={label}
+                  onClick={() => setDays([...set])}
+                  className="rounded-full border border-border px-2.5 py-0.5 text-xs text-fg-muted hover:bg-subtle"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label={tr("Days of week")}>
+              {DAYS.map((d, i) => (
+                <button
+                  type="button"
+                  key={d}
+                  onClick={() => setDays((cur) => (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]))}
+                  aria-pressed={days.includes(i)}
+                  className={cn(
+                    "h-9 w-11 rounded-lg border text-xs font-medium",
+                    days.includes(i) ? "border-accent bg-accent-soft text-accent" : "border-border text-fg-muted",
+                  )}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {type === "monthly" && (
           <div>
-            <Label htmlFor="auto-day" hint="Months without this day use their last day.">
-              Day of month
+            <Label htmlFor="auto-day" hint={tr("Months without this day use their last day.")}>
+              {tr("Day of month")}
             </Label>
             <Input id="auto-day" type="number" min={1} max={31} value={day} onChange={(e) => setDay(Number(e.target.value))} />
           </div>
         )}
         <p className="rounded-lg bg-subtle px-3 py-2 text-xs text-fg-muted">
-          <span className="font-medium text-fg">{type === "weekly" && !days.length ? "No days selected" : describeSchedule(schedule)}</span> · {tz}
+          <span className="font-medium text-fg">
+            {type === "weekly" && !days.length ? tr("No days selected") : describeSchedule(schedule)}
+          </span>{" "}
+          · {tz}
           {preview.error ? (
             <span className="mt-1 block text-danger">{preview.error}</span>
           ) : (
             <span className="mt-1 block">
-              {preview.runs.length === 1 ? "Runs " : "Next runs: "}
-              {preview.runs.map((d) => `${formatDateTime(d.toISOString(), tz, i18n.locale)} (${relativeTime(d.toISOString(), i18n)})`).join(" · ")}
+              {preview.runs.length === 1 ? tr("Runs ") : tr("Next runs: ")}
+              {preview.runs
+                .map((d) => `${formatDateTime(d.toISOString(), tz, i18n.locale)} (${relativeTime(d.toISOString(), i18n)})`)
+                .join(" · ")}
             </span>
           )}
         </p>
