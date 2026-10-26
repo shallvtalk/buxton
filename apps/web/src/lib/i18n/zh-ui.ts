@@ -556,4 +556,6 @@ export const zhUi: Readonly<Record<string, string>> = {
   "Output tokens (estimated)": "输出 token（估算）",
   "Input tokens (estimated)": "输入 token（估算）",
   "Used for due dates and schedules. Changing it re-schedules automations.": "用于截止日期和定时任务；修改时区后，自动化会重新安排时间。",
+  "Expand sidebar": "展开侧边栏",
+  "Collapse sidebar": "收起侧边栏",
 };

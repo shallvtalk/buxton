@@ -12,7 +12,7 @@ Buxton is a frontend fork of [Talorys](https://github.com/rociiu/talorys), with 
 
 Warm paper surfaces, ink text, a clay accent, system sans-serif for controls and a system serif for the welcome screen. Dark mode uses deep olive surfaces and a warm peach accent. No web fonts, remote assets, new UI packages, or external runtime services were added.
 
-- One sidebar holds workspace navigation and searchable conversations, replacing the original two-column navigation.
+- One sidebar holds workspace navigation and searchable conversations, replacing the original two-column navigation. Its top button collapses it to a 72px icon rail; navigation, search, new conversation, notifications, settings and lock remain accessible. The browser remembers the choice.
 - The start screen offers four working suggestions, a timezone-aware greeting, and real recent conversations.
 - A workspace palette (`⌘K` / `Ctrl+K`, or the search button) finds pages and loaded conversation titles. The sidebar retains the full server-backed history search, rename, and delete flows.
 - Streaming responses, stop/retry/copy, tool activity, destructive-action approval, and task-plan cards retain their original behavior.

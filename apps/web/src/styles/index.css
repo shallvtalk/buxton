@@ -274,3 +274,14 @@ select:focus-visible {
   .workspace-sidebar > .mt-7 { flex: 1 0 180px; }
   .sidebar-account { min-height: 90px; }
 }
+
+/* A compact icon rail leaves more room for the workspace without losing navigation. */
+.workspace-sidebar { transition: width 180ms ease; }
+.sidebar-rail-action { display: flex; width: 40px; height: 40px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 10px; }
+.sidebar-collapsed { overflow-x: hidden; }
+@media (max-height: 650px) and (min-width: 768px) {
+  .sidebar-collapsed > a { padding: 0; }
+  .sidebar-collapsed .sidebar-rail-action { height: 36px; }
+  .sidebar-collapsed > nav { gap: 4px; }
+  .sidebar-collapsed > .mt-auto { padding-top: 16px; }
+}

@@ -8,6 +8,9 @@ import {
   CheckSquare,
   Command,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
   type LucideIcon,
   MessageSquare,
   NotebookPen,
@@ -40,6 +43,21 @@ export function AppShell() {
   const { logout } = useSession();
   const settings = useSettings();
   const notifications = useNotifications();
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("buxton.sidebar.collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("buxton.sidebar.collapsed", String(collapsed));
+    } catch {
+      /* Navigation still works when browser storage is unavailable. */
+    }
+  }, [collapsed]);
+  const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   useKeyboardOpenFlag();
@@ -81,77 +99,163 @@ export function AppShell() {
       <a href="#workspace" className="skip-link">
         {tr("Skip to workspace")}
       </a>
-      <aside className="workspace-sidebar hidden w-[264px] shrink-0 flex-col border-r border-border bg-subtle md:flex">
-        <NavLink to="/chat" aria-label={tr("Buxton home")} className="flex items-center gap-3 px-6 pb-7 pt-8">
-          <Logo className="h-9 w-9" />
-          <div>
-            <span className="brand-wordmark block text-[22px] leading-6">
-              {tr("Buxton")}
-              <span className="text-accent">.</span>
-            </span>
-            <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] text-fg-muted">{tr("Personal workspace")}</span>
-          </div>
-        </NavLink>
+      <aside
+        id="desktop-sidebar"
+        data-collapsed={collapsed}
+        className={cn(
+          "workspace-sidebar relative hidden shrink-0 flex-col border-r border-border bg-subtle md:flex",
+          collapsed ? "sidebar-collapsed w-[72px]" : "w-[264px]",
+        )}
+      >
         <button
           type="button"
-          onClick={() => setSearchOpen(true)}
-          className="mx-4 mb-6 flex items-center gap-2 rounded-lg border border-border bg-surface/60 px-3 py-2.5 text-xs text-fg-muted hover:border-border-strong"
-          aria-label={tr("Search workspace")}
+          onClick={() => setCollapsed((value) => !value)}
+          className={cn(
+            "sidebar-toggle flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-muted hover:bg-muted hover:text-fg",
+            collapsed ? "mx-auto mb-4 mt-3" : "absolute right-3 top-8 z-10",
+          )}
+          aria-label={tr(collapsed ? "Expand sidebar" : "Collapse sidebar")}
+          title={tr(collapsed ? "Expand sidebar" : "Collapse sidebar")}
+          aria-expanded={!collapsed}
+          aria-controls="desktop-sidebar"
         >
-          <Search className="h-3.5 w-3.5" />
-          {tr(" Find your way")}{" "}
-          <kbd className="ml-auto flex items-center gap-0.5 text-[10px]">
-            <Command className="h-3 w-3" /> K
-          </kbd>
+          {collapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
         </button>
-        <div className="px-6 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-subtle">{tr("Workspace")}</div>
-        <nav className="space-y-1 px-3" aria-label={t("nav.main")}>
-          {NAV.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  "workspace-nav flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors",
-                  isActive ? "is-active bg-accent-soft text-accent" : "text-fg-muted hover:bg-muted hover:text-fg",
-                )
-              }
-            >
-              <Icon className="h-[17px] w-[17px]" />
-              {t(label)}
+        {collapsed ? (
+          <>
+            <NavLink to="/chat" aria-label={tr("Buxton home")} title={tr("Buxton home")} className="mx-auto mb-5">
+              <Logo className="h-9 w-9" />
             </NavLink>
-          ))}
-        </nav>
-        <div className="mt-7 flex min-h-0 flex-1 flex-col">
-          <div className="px-6 pb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-subtle">{tr("Conversations")}</div>
-          <ConversationList activeId={conversationId} onNavigate={() => {}} />
-        </div>
-        <div className="sidebar-account mx-3 mb-3 mt-2 rounded-xl border border-border bg-surface/70 p-2">
-          <div className="flex items-center gap-2.5 px-1 pb-2 pt-1">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
-              {agentName.slice(0, 1).toUpperCase()}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold">{agentName}</p>
-              <p className="mt-0.5 text-[10px] text-fg-muted">{tr("Your personal agent")}</p>
+            <div className="flex flex-col items-center gap-1 px-3 pb-4">
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                className="sidebar-rail-action"
+                aria-label={tr("Search workspace")}
+                title={tr("Search workspace")}
+              >
+                <Search className="h-[18px] w-[18px]" />
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/chat")}
+                className="sidebar-rail-action bg-accent text-accent-fg hover:opacity-90"
+                aria-label={tr("New conversation")}
+                title={tr("New conversation")}
+              >
+                <Plus className="h-[18px] w-[18px]" />
+              </button>
             </div>
-            {bell}
-          </div>
-          <div className="flex items-center justify-between border-t border-border pt-1">
-            <NavLink to="/settings" className="flex items-center gap-2 rounded-md px-2 py-2 text-xs text-fg-muted hover:bg-muted">
-              <Settings className="h-3.5 w-3.5" />
-              {t("nav.settings")}
+            <nav className="flex flex-col items-center gap-2 px-3" aria-label={t("nav.main")}>
+              {NAV.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  aria-label={t(label)}
+                  title={t(label)}
+                  className={({ isActive }) =>
+                    cn("sidebar-rail-action", isActive ? "bg-accent-soft text-accent" : "text-fg-muted hover:bg-muted hover:text-fg")
+                  }
+                >
+                  <Icon className="h-[18px] w-[18px]" />
+                </NavLink>
+              ))}
+            </nav>
+            <div className="mt-auto flex flex-col items-center gap-2 px-3 pb-4 pt-6">
+              {bell}
+              <NavLink
+                to="/settings"
+                className="sidebar-rail-action text-fg-muted hover:bg-muted"
+                aria-label={t("nav.settings")}
+                title={t("nav.settings")}
+              >
+                <Settings className="h-[18px] w-[18px]" />
+              </NavLink>
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className="sidebar-rail-action text-fg-muted hover:bg-muted"
+                aria-label={t("nav.lock")}
+                title={t("nav.lock")}
+              >
+                <LogOut className="h-[18px] w-[18px]" />
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <NavLink to="/chat" aria-label={tr("Buxton home")} className="flex items-center gap-3 px-6 pb-7 pt-8">
+              <Logo className="h-9 w-9" />
+              <div>
+                <span className="brand-wordmark block text-[22px] leading-6">
+                  {tr("Buxton")}
+                  <span className="text-accent">.</span>
+                </span>
+                <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] text-fg-muted">{tr("Personal workspace")}</span>
+              </div>
             </NavLink>
             <button
               type="button"
-              onClick={() => void logout()}
-              className="rounded-md p-2 text-fg-muted hover:bg-muted"
-              aria-label={t("nav.lock")}
+              onClick={() => setSearchOpen(true)}
+              className="mx-4 mb-6 flex items-center gap-2 rounded-lg border border-border bg-surface/60 px-3 py-2.5 text-xs text-fg-muted hover:border-border-strong"
+              aria-label={tr("Search workspace")}
             >
-              <LogOut className="h-3.5 w-3.5" />
+              <Search className="h-3.5 w-3.5" />
+              {tr(" Find your way")}{" "}
+              <kbd className="ml-auto flex items-center gap-0.5 text-[10px]">
+                <Command className="h-3 w-3" /> K
+              </kbd>
             </button>
-          </div>
-        </div>
+            <div className="px-6 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-subtle">{tr("Workspace")}</div>
+            <nav className="space-y-1 px-3" aria-label={t("nav.main")}>
+              {NAV.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    cn(
+                      "workspace-nav flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors",
+                      isActive ? "is-active bg-accent-soft text-accent" : "text-fg-muted hover:bg-muted hover:text-fg",
+                    )
+                  }
+                >
+                  <Icon className="h-[17px] w-[17px]" />
+                  {t(label)}
+                </NavLink>
+              ))}
+            </nav>
+            <div className="mt-7 flex min-h-0 flex-1 flex-col">
+              <div className="px-6 pb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-subtle">{tr("Conversations")}</div>
+              <ConversationList activeId={conversationId} onNavigate={() => {}} />
+            </div>
+            <div className="sidebar-account mx-3 mb-3 mt-2 rounded-xl border border-border bg-surface/70 p-2">
+              <div className="flex items-center gap-2.5 px-1 pb-2 pt-1">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
+                  {agentName.slice(0, 1).toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-semibold">{agentName}</p>
+                  <p className="mt-0.5 text-[10px] text-fg-muted">{tr("Your personal agent")}</p>
+                </div>
+                {bell}
+              </div>
+              <div className="flex items-center justify-between border-t border-border pt-1">
+                <NavLink to="/settings" className="flex items-center gap-2 rounded-md px-2 py-2 text-xs text-fg-muted hover:bg-muted">
+                  <Settings className="h-3.5 w-3.5" />
+                  {t("nav.settings")}
+                </NavLink>
+                <button
+                  type="button"
+                  onClick={() => void logout()}
+                  className="rounded-md p-2 text-fg-muted hover:bg-muted"
+                  aria-label={t("nav.lock")}
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-bg px-4 md:hidden">
