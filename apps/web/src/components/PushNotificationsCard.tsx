@@ -136,7 +136,7 @@ function PushControls({ status: s }: { status: PushStatus }) {
           </div>
         </Row>
       ))}
-      <Row label={tr("Send a test")} hint={`${s.devices.length} of ${s.max_devices} devices registered.`}>
+      <Row label={tr("Send a test")} hint={i18n.language === "zh-CN" ? `已注册 ${s.devices.length} 台设备，最多 ${s.max_devices} 台。` : `${s.devices.length} of ${s.max_devices} devices registered.`}>
         <Button variant="outline" onClick={() => test.mutate(undefined)} disabled={s.devices.length === 0 || test.isPending}>
           <Send className="h-4 w-4" />
           {tr("Send test")}
